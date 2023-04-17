@@ -4,7 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "build": "tsc",
+    "start": "ts-node src/index.ts"
   },
   "repository": {
     "type": "git",
@@ -13,8 +17,7 @@
   "keywords": [
     "kolektivo",
     "treasury",
-    "kolektivo",
-    "network"
+    "kolektivo network"
   ],
   "author": "Curve Labs",
   "license": "MIT",
@@ -23,6 +26,21 @@
   },
   "homepage": "https://github.com/Kolektivo/kolektivo-treasury-services#readme",
   "devDependencies": {
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "@typescript-eslint/eslint-plugin": "^5.57.1",
+    "@typescript-eslint/parser": "^5.57.1",
+    "@types/node": "^14.14.10",
+    "dotenv": "^8.2.0",
+    "ts-node": "^9.0.0",
+    "eslint": "^8.30.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-import-resolver-typescript": "^3.5.4",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "eslint-plugin-unused-imports": "^2.0.0"
+  },
+  "dependencies": {
+    "defender-relay-client": "^1.42.0"
   }
 }
