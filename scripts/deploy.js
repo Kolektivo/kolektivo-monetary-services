@@ -7,6 +7,7 @@ require("dotenv").config();
 
 const srcPath = "./src/abis";
 const destPath = "./dist/abis";
+const distPath = "./dist";
 
 if (!fs.existsSync(srcPath)) {
   console.error(`${srcPath} does not exist`);
@@ -35,7 +36,8 @@ const { API_KEY_TEAM: apiKey, API_SECRET_TEAM: apiSecret } = process.env;
 const autoTaskId = "f5b9aafb-a5a8-4f55-8ee4-157ea27f7b4b";
 
 const client = new AutotaskClient({ apiKey, apiSecret });
-client.updateCodeFromFolder(autoTaskId, './path/to/code').then(() => {
+client.updateCodeFromFolder(autoTaskId, distPath).then(() => {
+  console.log("deploy complete");
   exit(0);
 })
 
