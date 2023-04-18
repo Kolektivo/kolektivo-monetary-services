@@ -20,6 +20,8 @@ if (require.main === module) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require("dotenv").config();
   const { API_KEY: apiKey, API_SECRET: apiSecret } = process.env as EnvInfo;
+  // console.log("API_KEY", apiKey, "API_SECRET", apiSecret);
+
   handler({ apiKey, apiSecret })
     .then(() => process.exit(0))
     .catch((error: Error) => {

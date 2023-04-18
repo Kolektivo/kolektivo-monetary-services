@@ -2,13 +2,13 @@
   "name": "kolektivo-treasury-services",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "dist/autotask.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "build": "tsc",
-    "start": "ts-node src/index.ts"
+    "start": "ts-node src/autotask.ts"
   },
   "repository": {
     "type": "git",
