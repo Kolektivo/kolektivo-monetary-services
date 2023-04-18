@@ -1,6 +1,12 @@
+/**
+ * the packages available in the Autotask execution environment:
+ *    https://docs.openzeppelin.com/defender/autotasks#environment
+ */
 /* eslint-disable no-console */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const axios = require("axios");
 import { Relayer } from "defender-relay-client";
-import { RelayerModel, RelayerParams } from "defender-relay-client/lib/relayer";
+import { RelayerModel } from "defender-relay-client/lib/relayer";
 
 interface IContractInfo {
   address: string;
@@ -10,24 +16,35 @@ interface IContractInfo {
 interface IContractInfosJson {
   name: string;
   chainId: number;
+  // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
   contracts: {
     [name: string]: IContractInfo;
-  }
+  };
 }
 
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
 interface ISharedContractInfos {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [name: string]: Array<any>;
 }
 
+interface IAutoRelayHandler {
+  apiKey: string;
+  apiSecret: string;
+  secrets: Record<string, string>;
+}
 const IS_TESTING = require.main === module;
+
 let abis: IContractInfosJson;
 let sharedAbis: ISharedContractInfos;
 
 const fetchAbis = (): void => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!abis) {
     console.log("fetching abis");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     abis = require(`./abis/${IS_TESTING ? "celo-test.json" : "celo.json"}`);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!abis) {
       throw new Error("abis not found");
     }
@@ -36,6 +53,7 @@ const fetchAbis = (): void => {
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getContractAbi = (contractName: string): Array<any> => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   let abi = abis.contracts[contractName]?.abi;
@@ -55,17 +73,63 @@ const getContractAbi = (contractName: string): Array<any> => {
   return abi;
 };
 
-// Entrypoint for the Autotask
-export async function handler(credentials: RelayerParams /*, context: { notificationClient?: { send: (...) => void } }*/): Promise<string> {
+// const getContractAddress = (contractName: string): string => {
+//   const contractInfo: IContractInfo = abis.contracts[contractName];
+//   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+//   if (!contractInfo.address) {
+//     throw new Error(`abi address not found for ${contractName}`);
+//   }
+//   return contractInfo.address;
+// };
+
+const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Promise<number> => {
+  // const geckoTokenId = `${tokenName.toLowerCase()}-${tokenSymbol.toLowerCase()}`;
+
+  const uri = `https://pro-api.coingecko.com/api/v3/coins/${geckoTokenId}?market_data=true&localization=false&community_data=false&developer_data=false&sparkline=false&x_cg_pro_api_key=${coinGeckoApiKey}`;
+
+  return (
+    axios
+      .get(uri)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .then((response: any) => {
+        return response.data.market_data.current_price.usd ?? 0;
+      })
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .catch((ex: any) => {
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+        throw new Error(`price not found for token: ${geckoTokenId}, ex: ${ex.message}`);
+      })
+  );
+
+  return Promise.resolve(1.0);
+};
+
+/**
+ * Entrypoint for the Autotask
+ * @param event
+ * @returns
+ */
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
+export async function handler(event: IAutoRelayHandler /*, context: { notificationClient?: { send: (...) => void } }*/): Promise<string> {
   fetchAbis();
-  const relayer = new Relayer(credentials);
+  const relayer = new Relayer(event);
   const info: RelayerModel = await relayer.getRelayer();
 
-  // const oracleAbi = getContractAbi("Oracle");
+  // const cusdAbi = getContractAbi("cUSD");
+  // const cusdAddress = getContractAddress("cUSD");
 
   // console.log(`oracleAbi[0].inputs: ${JSON.stringify(oracleAbi[0].inputs)}`);
 
   console.log(`Relayer address is ${info.address}`);
+
+  // const cusdContract = new ethers.Contract(cusdAddress, cusdAbi);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
+  const coinGeckoApiKey = event.secrets.CoingeckoApiKey;
+  const price = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
+
+  console.log("cUSD price: ", price);
 
   // const { notificationClient } = context;
   // if (notificationClient) {
@@ -107,11 +171,10 @@ if (require.main === module) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 
-  handler({ apiKey, apiSecret } /*, { notificationClient: undefined }*/)
+  handler({ apiKey, apiSecret, secrets: {} } /*, { notificationClient: undefined }*/)
     .then(() => process.exit(0))
     .catch((error: Error) => {
       console.error(error);
       process.exit(1);
     });
 }
-
