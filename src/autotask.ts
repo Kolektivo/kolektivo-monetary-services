@@ -3,10 +3,22 @@ import { Relayer } from "defender-relay-client";
 import { RelayerModel, RelayerParams } from "defender-relay-client/lib/relayer";
 
 // Entrypoint for the Autotask
-export async function handler(credentials: RelayerParams) {
+export async function handler(credentials: RelayerParams): Promise<string> {
   const relayer = new Relayer(credentials);
   const info: RelayerModel = await relayer.getRelayer();
   console.log(`Relayer address is ${info.address}`);
+
+  return Promise.resolve("");
+
+  // const txRes = await relayer.sendTransaction({
+  //   to: '0xc7464dbcA260A8faF033460622B23467Df5AEA42',
+  //   value: 100,
+  //   speed: 'fast',
+  //   gasLimit: '21000',
+  // });
+
+  // console.log(txRes);
+  // return txRes.hash;
 }
 
 // Sample typescript type definitions
