@@ -1,3 +1,3 @@
-# Kolektivo Treasury Services
+# Kolektivo Monetary Services
 
 ## Overview
