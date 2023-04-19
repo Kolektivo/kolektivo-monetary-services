@@ -134,6 +134,40 @@ const updateOracle = (oracleContract: Contract, price: number): Promise<void> =>
   return oracleContract.pushReport(formattedPrice);
 };
 
+/**************************
+ * Send notifications
+ */
+interface ISendNotification {
+  channelAlias: string;
+  subject: string;
+  message: string;
+}
+interface INotificationClient {
+  send: (params: ISendNotification) => void;
+}
+
+/**
+ * Send a notification to the given channel (see Defender Notification Channels)
+ * @param message
+ * @param context is an argument to the handler
+ */
+const sendNotification = (context: { notificationClient?: INotificationClient }, message: string, subject: string, channel = "Kolektivo Notifications") => {
+  const { notificationClient } = context;
+  // is not set when running locally
+  if (notificationClient) {
+    try {
+      notificationClient.send({
+        channelAlias: channel,
+        subject: subject,
+        message: message,
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (ex: any) {
+      throw new Error("Failed to send notification", ex.message);
+    }
+  }
+};
+
 /********************************
  * Autotask entrypoint for the entire service
  *
@@ -141,7 +175,8 @@ const updateOracle = (oracleContract: Contract, price: number): Promise<void> =>
  *
  * @returns I believe can be used to trigger notifications
  */
-export async function handler(event: IAutoRelayHandler /*, context: { notificationClient?: { send: (...) => void } }*/): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function handler(event: IAutoRelayHandler, context: { notificationClient?: INotificationClient }): Promise<string> {
   fetchAbis();
   const relayer = new Relayer(event);
 
@@ -181,18 +216,8 @@ export async function handler(event: IAutoRelayHandler /*, context: { notificati
   // const cusdAbi = getContractAbi("cUSD");
   // const cusdAddress = getContractAddress("cUSD");
 
-  // const { notificationClient } = context;
-  // if (notificationClient) {
-  //   try {
-  //     notificationClient.send({
-  //       channelAlias: "Kolektivo Notifications",
-  //       subject: "Autotask notification example",
-  //       message: "This is an example of a email notification sent from an autotask",
-  //     });
-  //   } catch (error) {
-  //     console.error("Failed to send notification", error);
-  //   }
-  // }
+  // this actually works!
+  // sendNotification(context, "Autotask notification", "Autorun has succeeded");
 
   return "Success";
 
@@ -223,7 +248,7 @@ if (RUNNING_LOCALLY) {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 
-  handler({ apiKey, apiSecret, secrets: {} } /*, { notificationClient: undefined }*/)
+  handler({ apiKey, apiSecret, secrets: {} }, { notificationClient: undefined })
     .then(() => process.exit(0))
     .catch((error: Error) => {
       console.error(error);
