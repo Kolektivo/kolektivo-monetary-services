@@ -24,6 +24,12 @@ Copies abi files to the dist folder.  Invokes defender-client APIs to zip up the
 
 ## Run Locally
 
-`npm run start`
+Create a .env file:
 
-Trouble is it doesn't know about the coingecko api key, so it fails.
+  API_KEY=
+  API_SECRET=
+  API_KEY_TEAM=
+  API_SECRET_TEAM=
+  COINGECKO_API_KEY=
+
+`npm run start`

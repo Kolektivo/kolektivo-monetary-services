@@ -186,7 +186,8 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
   const provider = new DefenderRelayProvider(event);
   const signer = new DefenderRelaySigner(event, provider, { speed: "fast" });
 
-  const coinGeckoApiKey = event.secrets.CoingeckoApiKey;
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const coinGeckoApiKey = RUNNING_LOCALLY ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
   const cusdPrice = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
 
   // confirm here: https://www.coingecko.com/en/coins/celo-dollar
