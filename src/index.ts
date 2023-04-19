@@ -129,12 +129,16 @@ const getOracleForToken = async (reserveContract: Contract, erc20Name: string, s
 };
 
 const updateOracle = (oracleContract: Contract, price: number): Promise<void> => {
+  // default precision is 18
   const formattedPrice = ethers.utils.parseEther(price.toString());
   return oracleContract.pushReport(formattedPrice);
 };
 
 /********************************
  * Autotask entrypoint for the entire service
+ *
+ * The autotask logs all exceptions thrown here, including stack trace, and sends an email to the Defender account holder.
+ *
  * @returns I believe can be used to trigger notifications
  */
 export async function handler(event: IAutoRelayHandler /*, context: { notificationClient?: { send: (...) => void } }*/): Promise<string> {
@@ -162,7 +166,17 @@ export async function handler(event: IAutoRelayHandler /*, context: { notificati
   console.log("cUSD Oracle address: ", oracleContract.address);
   console.log("Updating cUSD oracle");
 
-  await updateOracle(oracleContract, cusdPrice);
+  /**
+   * From https://www.npmjs.com/package/defender-relay-client#user-content-ethersjs :
+   *
+   * A wait on the transaction to be mined will only wait for the current transaction hash (see Querying).
+   * If Defender Relayer replaces the transaction with a different one, this operation will time out.
+   * This is ok for fast transactions, since Defender only reprices after a few minutes.
+   * But if you expect the transaction to take a long time to be mined, then ethers' wait may not work.
+   * Future versions will also include an ethers provider aware of this.
+   */
+  const tx = await updateOracle(oracleContract, cusdPrice);
+  // const mined = await tx.wait();
 
   // const cusdAbi = getContractAbi("cUSD");
   // const cusdAddress = getContractAddress("cUSD");
@@ -180,7 +194,7 @@ export async function handler(event: IAutoRelayHandler /*, context: { notificati
   //   }
   // }
 
-  return Promise.resolve("");
+  return "Success";
 
   // const txRes = await relayer.sendTransaction({
   //   to: '0xc7464dbcA260A8faF033460622B23467Df5AEA42',
