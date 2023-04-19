@@ -59,6 +59,8 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
    * Future versions will also include an ethers provider aware of this.
    */
   const tx = await updateOracle(cUsdOracleContract, cusdPrice);
+  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+  console.log(`Update cUSD tx hash: ${tx.hash}`);
   // const mined = await tx.wait();
 
   // const cusdAbi = getContractAbi("cUSD");
