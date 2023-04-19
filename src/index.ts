@@ -6,7 +6,10 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require("axios");
 import { Relayer } from "defender-relay-client";
+import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { RelayerModel } from "defender-relay-client/lib/relayer";
+import { ethers } from "ethers";
+import { Contract } from "ethers/lib/ethers";
 
 interface IContractInfo {
   address: string;
@@ -43,7 +46,8 @@ const fetchAbis = (): void => {
   if (!abis) {
     console.log("fetching abis");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    abis = require(`./abis/${IS_TESTING ? "celo-test.json" : "celo.json"}`);
+    // TODO restore this when ready for production: abis = require(`./abis/${IS_TESTING ? "celo-test.json" : "celo.json"}`);
+    abis = require("./abis/celo-test.json");
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!abis) {
       throw new Error("abis not found");
@@ -73,14 +77,14 @@ const getContractAbi = (contractName: string): Array<any> => {
   return abi;
 };
 
-// const getContractAddress = (contractName: string): string => {
-//   const contractInfo: IContractInfo = abis.contracts[contractName];
-//   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-//   if (!contractInfo.address) {
-//     throw new Error(`abi address not found for ${contractName}`);
-//   }
-//   return contractInfo.address;
-// };
+const getContractAddress = (contractName: string): string => {
+  const contractInfo: IContractInfo = abis.contracts[contractName];
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  if (!contractInfo.address) {
+    throw new Error(`abi address not found for ${contractName}`);
+  }
+  return contractInfo.address;
+};
 
 const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Promise<number> => {
   // const geckoTokenId = `${tokenName.toLowerCase()}-${tokenSymbol.toLowerCase()}`;
@@ -104,32 +108,60 @@ const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Prom
   return Promise.resolve(1.0);
 };
 
-/**
- * Entrypoint for the Autotask
- * @param event
- * @returns
+/*******************************
+ * Oracle functions
  */
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style
+const getReserveContract = (signer: DefenderRelaySigner): Contract => {
+  const reserveAddress = getContractAddress("Reserve");
+  const reserveAbi = getContractAbi("Reserve");
+  return new ethers.Contract(reserveAddress, reserveAbi, signer);
+};
+
+const getOracleForToken = async (reserveContract: Contract, erc20Name: string, signer: DefenderRelaySigner): Promise<Contract> => {
+  const erc20Address = getContractAddress(erc20Name);
+  const oracleAddress = await reserveContract.oraclePerERC20(erc20Address);
+  const oracleAbi = getContractAbi("Oracle");
+  return new ethers.Contract(oracleAddress, oracleAbi, signer);
+};
+
+const updateOracle = (oracleContract: Contract, price: number): Promise<void> => {
+  const formattedPrice = ethers.utils.parseEther(price.toString());
+  return oracleContract.pushReport(formattedPrice);
+};
+
+/********************************
+ * Autotask entrypoint
+ * @returns I believe can be used to trigger notifications
+ */
 export async function handler(event: IAutoRelayHandler /*, context: { notificationClient?: { send: (...) => void } }*/): Promise<string> {
   fetchAbis();
   const relayer = new Relayer(event);
+
   const info: RelayerModel = await relayer.getRelayer();
+  console.log(`Relayer address is ${info.address}`);
+
+  const provider = new DefenderRelayProvider(event);
+  const signer = new DefenderRelaySigner(event, provider, { speed: "fast" });
+
+  const coinGeckoApiKey = event.secrets.CoingeckoApiKey;
+  const cusdPrice = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
+
+  // confirm here: https://www.coingecko.com/en/coins/celo-dollar
+  console.log("cUSD price: ", cusdPrice);
+
+  const reserveContract = getReserveContract(signer);
+
+  console.log("Reserve address: ", reserveContract.address);
+
+  const oracleContract = await getOracleForToken(reserveContract, "cUSD", signer);
+
+  console.log("cUSD Oracle address: ", oracleContract.address);
+  console.log("Updating cUSD oracle");
+
+  await updateOracle(oracleContract, cusdPrice);
 
   // const cusdAbi = getContractAbi("cUSD");
   // const cusdAddress = getContractAddress("cUSD");
-
-  // console.log(`oracleAbi[0].inputs: ${JSON.stringify(oracleAbi[0].inputs)}`);
-
-  console.log(`Relayer address is ${info.address}`);
-
-  // const cusdContract = new ethers.Contract(cusdAddress, cusdAbi);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-
-  const coinGeckoApiKey = event.secrets.CoingeckoApiKey;
-  const price = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
-
-  console.log("cUSD price: ", price);
 
   // const { notificationClient } = context;
   // if (notificationClient) {
