@@ -196,9 +196,9 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
 
   console.log("Reserve address: ", reserveContract.address);
 
-  const oracleContract = await getOracleForToken(reserveContract, "cUSD", signer);
+  const cUsdOracleContract = await getOracleForToken(reserveContract, "cUSD", signer);
 
-  console.log("cUSD Oracle address: ", oracleContract.address);
+  console.log("cUSD Oracle address: ", cUsdOracleContract.address);
   console.log("Updating cUSD oracle");
 
   /**
@@ -210,7 +210,7 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
    * But if you expect the transaction to take a long time to be mined, then ethers' wait may not work.
    * Future versions will also include an ethers provider aware of this.
    */
-  const tx = await updateOracle(oracleContract, cusdPrice);
+  const tx = await updateOracle(cUsdOracleContract, cusdPrice);
   // const mined = await tx.wait();
 
   // const cusdAbi = getContractAbi("cUSD");
