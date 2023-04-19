@@ -11,6 +11,11 @@ import { RelayerModel } from "defender-relay-client/lib/relayer";
 import { ethers } from "ethers";
 import { Contract } from "ethers/lib/ethers";
 
+const RUNNING_LOCALLY = require.main === module;
+
+/*************************************
+ * ABI services
+ */
 interface IContractInfo {
   address: string;
   abi: Array<any>;
@@ -36,7 +41,6 @@ interface IAutoRelayHandler {
   apiSecret: string;
   secrets: Record<string, string>;
 }
-const IS_TESTING = require.main === module;
 
 let abis: IContractInfosJson;
 let sharedAbis: ISharedContractInfos;
@@ -46,7 +50,7 @@ const fetchAbis = (): void => {
   if (!abis) {
     console.log("fetching abis");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    // TODO restore this when ready for production: abis = require(`./abis/${IS_TESTING ? "celo-test.json" : "celo.json"}`);
+    // TODO restore this when ready for production: abis = require(`./abis/${RUNNING_LOCALLY ? "celo-test.json" : "celo.json"}`);
     abis = require("./abis/celo-test.json");
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!abis) {
@@ -109,7 +113,7 @@ const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Prom
 };
 
 /*******************************
- * Oracle functions
+ * Reserve Oracle functions
  */
 const getReserveContract = (signer: DefenderRelaySigner): Contract => {
   const reserveAddress = getContractAddress("Reserve");
@@ -130,7 +134,7 @@ const updateOracle = (oracleContract: Contract, price: number): Promise<void> =>
 };
 
 /********************************
- * Autotask entrypoint
+ * Autotask entrypoint for the entire service
  * @returns I believe can be used to trigger notifications
  */
 export async function handler(event: IAutoRelayHandler /*, context: { notificationClient?: { send: (...) => void } }*/): Promise<string> {
@@ -189,14 +193,16 @@ export async function handler(event: IAutoRelayHandler /*, context: { notificati
   // return txRes.hash;
 }
 
+/*************************************
+ * To run locally (this code will not be executed in Autotasks)
+ */
 // Sample typescript type definitions
 type EnvInfo = {
   API_KEY: string;
   API_SECRET: string;
 };
 
-// To run locally (this code will not be executed in Autotasks)
-if (require.main === module) {
+if (RUNNING_LOCALLY) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require("dotenv").config();
   const { API_KEY: apiKey, API_SECRET: apiSecret } = process.env as EnvInfo;
