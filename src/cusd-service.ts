@@ -30,6 +30,6 @@ export const executeCusdService = async (coinGeckoApiKey: string, signer: Defend
    */
   const tx = await updateOracle(cUsdOracleContract, cusdPrice);
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  console.log(`Update cUSD tx hash: ${tx.hash}`);
+  console.log(`Update cUSD oracle tx hash: ${tx.hash}`);
   // const mined = await tx.wait();
 };
