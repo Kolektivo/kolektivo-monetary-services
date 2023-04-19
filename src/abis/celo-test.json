@@ -1052,7 +1052,7 @@
       ]
     },
     "Reserve": {
-      "address": "0xdb2B19C8e3ce01E7f5101652B9dEb500D1298716",
+      "address": "0x9F2D87bEb5ead48FBf9c39Ada853C79DB6D0781f",
       "abi": [
         {
           "inputs": [
@@ -1609,17 +1609,17 @@
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "oldVestingDuration",
+              "name": "oldtimeLockDuration",
               "type": "uint256"
             },
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "newVestingDuration",
+              "name": "newtimeLockDuration",
               "type": "uint256"
             }
           ],
-          "name": "SetERC20BondingVesting",
+          "name": "SetERC20BondingTimeLock",
           "type": "event"
         },
         {
@@ -1721,17 +1721,17 @@
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "oldVestingDuration",
+              "name": "oldtimeLockDuration",
               "type": "uint256"
             },
             {
               "indexed": false,
               "internalType": "uint256",
-              "name": "newVestingDuration",
+              "name": "newtimeLockDuration",
               "type": "uint256"
             }
           ],
-          "name": "SetERC721IdBondingVesting",
+          "name": "SetERC721IdBondingTimeLock",
           "type": "event"
         },
         {
@@ -1790,6 +1790,25 @@
             {
               "indexed": true,
               "internalType": "address",
+              "name": "oldTimeLockVault",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "internalType": "address",
+              "name": "newTimeLockVault",
+              "type": "address"
+            }
+          ],
+          "name": "SetTimeLockVault",
+          "type": "event"
+        },
+        {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "internalType": "address",
               "name": "oldOracle",
               "type": "address"
             },
@@ -1801,25 +1820,6 @@
             }
           ],
           "name": "SetTokenOracle",
-          "type": "event"
-        },
-        {
-          "anonymous": false,
-          "inputs": [
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "oldVestingVault",
-              "type": "address"
-            },
-            {
-              "indexed": true,
-              "internalType": "address",
-              "name": "newVestingVault",
-              "type": "address"
-            }
-          ],
-          "name": "SetVestingVault",
           "type": "event"
         },
         {
@@ -2262,7 +2262,7 @@
               "type": "address"
             }
           ],
-          "name": "bondingVestingDurationPerERC20",
+          "name": "bondingTimeLockDurationPerERC20",
           "outputs": [
             {
               "internalType": "uint256",
@@ -2286,7 +2286,7 @@
               "type": "uint256"
             }
           ],
-          "name": "bondingVestingDurationPerERC721Id",
+          "name": "bondingTimeLockDurationPerERC721Id",
           "outputs": [
             {
               "internalType": "uint256",
@@ -3159,11 +3159,11 @@
             },
             {
               "internalType": "uint256",
-              "name": "vestingDuration",
+              "name": "timeLockDuration",
               "type": "uint256"
             }
           ],
-          "name": "setBondingVestingForERC20",
+          "name": "setBondingTimeLockForERC20",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
@@ -3182,11 +3182,11 @@
             },
             {
               "internalType": "uint256",
-              "name": "vestingDuration",
+              "name": "timeLockDuration",
               "type": "uint256"
             }
           ],
-          "name": "setBondingVestingForERC721Id",
+          "name": "setBondingTimeLockForERC721Id",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
@@ -3257,11 +3257,11 @@
           "inputs": [
             {
               "internalType": "address",
-              "name": "tokenOracle_",
+              "name": "timeLockVault_",
               "type": "address"
             }
           ],
-          "name": "setTokenOracle",
+          "name": "setTimeLockVault",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
@@ -3270,11 +3270,11 @@
           "inputs": [
             {
               "internalType": "address",
-              "name": "vestingVault_",
+              "name": "tokenOracle_",
               "type": "address"
             }
           ],
-          "name": "setVestingVault",
+          "name": "setTokenOracle",
           "outputs": [],
           "stateMutability": "nonpayable",
           "type": "function"
@@ -3298,7 +3298,7 @@
             },
             {
               "internalType": "uint256",
-              "name": "vestingDuration",
+              "name": "timeLockDuration",
               "type": "uint256"
             }
           ],
@@ -3344,7 +3344,7 @@
             },
             {
               "internalType": "uint256",
-              "name": "vestingDuration",
+              "name": "timeLockDuration",
               "type": "uint256"
             }
           ],
@@ -3369,6 +3369,19 @@
           "name": "setupAndListERC721IdRedemption",
           "outputs": [],
           "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "timeLockVault",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
           "type": "function"
         },
         {
@@ -3439,19 +3452,6 @@
           "type": "function"
         },
         {
-          "inputs": [],
-          "name": "vestingVault",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
           "inputs": [
             {
               "internalType": "address",
@@ -3500,7 +3500,7 @@
       ]
     },
     "Kolektivo Curacao Reserve Token": {
-      "address": "0xf4cb43D02842c65101e5DA329ED01dFeC2280EdA",
+      "address": "0xeB22fD1Dc0F480faA0D5cce673364b31E5f1e772",
       "abi": "ERC20"
     },
     "Treasury": {
@@ -9660,22 +9660,32 @@
       "id": 2,
       "abi": "ERC721"
     },
-    "VestingVault": {
-      "address": "0x0000000000000000000000000000000000000000",
+    "TimeLockVault": {
+      "address": "0xFcAb95D9577bBA5c3203852DE98dD2730ce17452",
       "abi": [
         {
           "inputs": [],
-          "name": "InvalidPendingOwner",
+          "name": "InvalidAmount",
           "type": "error"
         },
         {
           "inputs": [],
-          "name": "OnlyCallableByOwner",
+          "name": "InvalidDuration",
           "type": "error"
         },
         {
           "inputs": [],
-          "name": "OnlyCallableByPendingOwner",
+          "name": "InvalidRecipient",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "SenderCantLock",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "UserHasNoLocks",
           "type": "error"
         },
         {
@@ -9684,17 +9694,23 @@
             {
               "indexed": true,
               "internalType": "address",
-              "name": "previousOwner",
+              "name": "receiver",
               "type": "address"
             },
             {
               "indexed": true,
               "internalType": "address",
-              "name": "newOwner",
+              "name": "token",
               "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
             }
           ],
-          "name": "NewOwner",
+          "name": "Claimed",
           "type": "event"
         },
         {
@@ -9703,25 +9719,30 @@
             {
               "indexed": true,
               "internalType": "address",
-              "name": "previousPendingOwner",
+              "name": "receiver",
               "type": "address"
             },
             {
               "indexed": true,
               "internalType": "address",
-              "name": "newPendingOwner",
+              "name": "token",
               "type": "address"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "indexed": false,
+              "internalType": "uint256",
+              "name": "unlockAt",
+              "type": "uint256"
             }
           ],
-          "name": "NewPendingOwner",
+          "name": "Locked",
           "type": "event"
-        },
-        {
-          "inputs": [],
-          "name": "acceptOwnership",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
         },
         {
           "inputs": [],
@@ -9733,8 +9754,94 @@
         {
           "inputs": [
             {
+              "internalType": "uint256",
+              "name": "index",
+              "type": "uint256"
+            }
+          ],
+          "name": "claimAt",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "address",
-              "name": "recipient",
+              "name": "token",
+              "type": "address"
+            }
+          ],
+          "name": "claimToken",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "receiver",
+              "type": "address"
+            }
+          ],
+          "name": "getLocksOf",
+          "outputs": [
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "token",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "unlockAt",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct TimeLockVault.Lock[]",
+              "name": "locks",
+              "type": "tuple[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "locker",
+              "type": "address"
+            }
+          ],
+          "name": "isLocker",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "token",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "receiver",
               "type": "address"
             },
             {
@@ -9744,103 +9851,13 @@
             },
             {
               "internalType": "uint256",
-              "name": "vestingDuration",
+              "name": "duration",
               "type": "uint256"
             }
           ],
-          "name": "depositFor",
+          "name": "lock",
           "outputs": [],
           "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "owner",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "pendingOwner",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "pendingOwner_",
-              "type": "address"
-            }
-          ],
-          "name": "setPendingOwner",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "token",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "recipient",
-              "type": "address"
-            }
-          ],
-          "name": "unvestedFor",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "recipient",
-              "type": "address"
-            }
-          ],
-          "name": "vestedFor",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
           "type": "function"
         }
       ]
