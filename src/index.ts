@@ -54,7 +54,7 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
 
   const cusdPrice = await executeCusdService(coinGeckoApiKey, signer);
 
-  const kCurPool = getContract("kCUR Pool", signer);
+  const kCurPool = getContract("kCur Pool", signer);
 
   const kCurPrice = await getKCurPrice(kCurPool, cusdPrice);
 

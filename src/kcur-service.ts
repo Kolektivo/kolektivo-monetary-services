@@ -18,7 +18,7 @@ interface IPoolTokensStruct {
 export const getKCurPrice = async (kCurPool: Contract, cUsdPrice: number): Promise<number> => {
   const vault = getContract("Symmetric-Vault");
 
-  const kCurToken = getContract("kCUR");
+  const kCurToken = getContract("Kolektivo Curacao Reserve Token");
   const cUsdToken = getContract("cUSD");
 
   const kCurIndex = kCurToken.address.toLowerCase() < cUsdToken.address.toLowerCase() ? 0 : 1;
@@ -40,9 +40,11 @@ export const getKCurPrice = async (kCurPool: Contract, cUsdPrice: number): Promi
    * see here: https://docs.balancer.fi/reference/math/weighted-math.html#spot-price
    */
   // eslint-disable-next-line prettier/prettier
-  const spotExchangeRate = (Bi / Wi) / (Bo / Wo);
+  const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
 
-  return spotExchangeRate * cUsdPrice;
+  console.log(`returning kCUR spot price: ${spotExchangeRate}`);
+
+  return spotExchangeRate;
 };
 
 export const executeKCurService = async (kcurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
