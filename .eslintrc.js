@@ -39,7 +39,7 @@ module.exports = {
       {
         trailingComma: "all",
         singleQuote: false,
-        printWidth: 200
+        printWidth: 120
       },
       {
         usePrettierrc: false
