@@ -1,17 +1,17 @@
 import { getContractAbi, getContractAddress } from "./abi-service";
+import { getContract } from "./contracts-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { ethers } from "ethers";
 import { Contract } from "ethers/lib/ethers";
+import { parseEther } from "ethers/lib/utils";
 
 export interface ITransaction {
   hash: string;
 }
 
 export const getReserveContract = (signer: DefenderRelaySigner): Contract => {
-  const reserveAddress = getContractAddress("Reserve");
-  const reserveAbi = getContractAbi("Reserve");
-  return new ethers.Contract(reserveAddress, reserveAbi, signer);
+  return getContract("Reserve", signer);
 };
 
 export const getOracleForToken = async (reserveContract: Contract, erc20Name: string, signer: DefenderRelaySigner): Promise<Contract> => {
@@ -23,6 +23,6 @@ export const getOracleForToken = async (reserveContract: Contract, erc20Name: st
 
 export const updateOracle = (oracleContract: Contract, price: number): Promise<ITransaction> => {
   // default precision is 18
-  const formattedPrice = ethers.utils.parseEther(price.toString());
+  const formattedPrice = parseEther(price.toString());
   return oracleContract.pushReport(formattedPrice) as Promise<ITransaction>;
 };

@@ -19,17 +19,8 @@ export const executeCusdService = async (coinGeckoApiKey: string, signer: Defend
   console.log("cUSD Oracle address: ", cUsdOracleContract.address);
   console.log("Updating cUSD oracle");
 
-  /**
-   * From https://www.npmjs.com/package/defender-relay-client#user-content-ethersjs :
-   *
-   * A wait on the transaction to be mined will only wait for the current transaction hash (see Querying).
-   * If Defender Relayer replaces the transaction with a different one, this operation will time out.
-   * This is ok for fast transactions, since Defender only reprices after a few minutes.
-   * But if you expect the transaction to take a long time to be mined, then ethers' wait may not work.
-   * Future versions will also include an ethers provider aware of this.
-   */
-  const tx = await updateOracle(cUsdOracleContract, cusdPrice);
+  const txcUsd = await updateOracle(cUsdOracleContract, cusdPrice);
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  console.log(`Update cUSD oracle tx hash: ${tx.hash}`);
+  console.log(`Update cUSD oracle tx hash: ${txcUsd.hash}`);
   // const mined = await tx.wait();
 };

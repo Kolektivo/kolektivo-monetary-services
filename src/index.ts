@@ -5,7 +5,11 @@
 /* eslint-disable no-console */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./abi-service";
+import { getContract } from "./contracts-service";
 import { executeCusdService } from "./cusd-service";
+import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
+import { executeKCurService, getKCurPrice } from "./kcur-service";
+import { executeMentoService } from "./mento-arbitrage-service";
 import { INotificationClient } from "./notifications";
 
 import { Relayer } from "defender-relay-client";
@@ -35,7 +39,30 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const coinGeckoApiKey = RUNNING_LOCALLY ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
 
-  await executeCusdService(coinGeckoApiKey, signer);
+  const kCurPool = getContract("kCUR Pool", signer);
+
+  const kCurPrice = await getKCurPrice(kCurPool);
+  console.log("kCUR price: ", kCurPrice);
+
+  /**
+   * FYI we aren't awaiting transactions to be mined.  Why, aside from the fact that Celo is fast
+   * and we're asking in the signer for fast mining:
+   *
+   * From https://www.npmjs.com/package/defender-relay-client#user-content-ethersjs :
+   *
+   * A wait on the transaction to be mined will only wait for the current transaction hash (see Querying).
+   * If Defender Relayer replaces the transaction with a different one, this operation will time out.
+   * This is ok for fast transactions, since Defender only reprices after a few minutes.
+   * But if you expect the transaction to take a long time to be mined, then ethers' wait may not work.
+   * Future versions will also include an ethers provider aware of this.
+   */
+
+  await Promise.all([
+    executeCusdService(coinGeckoApiKey, signer),
+    executeKCurService(kCurPrice, signer),
+    executeMentoService(kCurPrice, kCurPool, signer),
+    executeFloorAndCeilingService(kCurPrice, kCurPool, signer),
+  ]);
 
   // this actually works!
   // sendNotification(context, "Autotask notification", "Autorun has succeeded");
