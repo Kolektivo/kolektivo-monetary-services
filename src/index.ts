@@ -54,14 +54,12 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
 
   const cusdPrice = await executeCusdService(coinGeckoApiKey, signer);
 
-  const kCurPool = getContract("kCur Pool", signer);
-
-  const kCurPrice = await getKCurPrice(kCurPool, cusdPrice);
+  const kCurPrice = await getKCurPrice(cusdPrice, signer);
 
   await Promise.all([
     executeKCurService(kCurPrice, signer),
-    executeMentoService(kCurPrice, kCurPool, signer),
-    executeFloorAndCeilingService(kCurPrice, kCurPool, signer),
+    executeMentoService(kCurPrice, signer),
+    executeFloorAndCeilingService(kCurPrice, signer),
   ]);
 
   // this actually works!

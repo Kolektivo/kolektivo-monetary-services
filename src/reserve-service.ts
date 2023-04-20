@@ -14,10 +14,24 @@ export const getReserveContract = (signer: DefenderRelaySigner): Contract => {
   return getContract("Reserve", signer);
 };
 
-export const getOracleForToken = async (reserveContract: Contract, erc20Name: string, signer: DefenderRelaySigner): Promise<Contract> => {
-  const erc20Address = getContractAddress(erc20Name);
-  const oracleAddress = await reserveContract.oraclePerERC20(erc20Address);
+export const getOracleForToken = async (
+  reserveContract: Contract,
+  erc20Name: string,
+  signer: DefenderRelaySigner,
+): Promise<Contract> => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let oracleAddress: string;
+
   const oracleAbi = getContractAbi("Oracle");
+
+  if (erc20Name === "kCur") {
+    oracleAddress = await reserveContract.tokenOracle();
+    // then is the reserve token
+  } else {
+    // is a registered token
+    const erc20Address = getContractAddress(erc20Name);
+    oracleAddress = await reserveContract.oraclePerERC20(erc20Address);
+  }
   return new ethers.Contract(oracleAddress, oracleAbi, signer);
 };
 

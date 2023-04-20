@@ -3499,7 +3499,7 @@
         }
       ]
     },
-    "Kolektivo Curacao Reserve Token": {
+    "kCur": {
       "address": "0xeB22fD1Dc0F480faA0D5cce673364b31E5f1e772",
       "abi": "ERC20"
     },

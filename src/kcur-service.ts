@@ -15,11 +15,13 @@ interface IPoolTokensStruct {
   lastChangeBlock: BigNumber;
 }
 
-export const getKCurPrice = async (kCurPool: Contract, cUsdPrice: number): Promise<number> => {
-  const vault = getContract("Symmetric-Vault");
+export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number> => {
+  const vault = getContract("Symmetric-Vault", signer);
 
-  const kCurToken = getContract("Kolektivo Curacao Reserve Token");
-  const cUsdToken = getContract("cUSD");
+  const kCurToken = getContract("kCur", signer);
+  const cUsdToken = getContract("cUSD", signer);
+
+  const kCurPool = getContract("kCur Pool", signer);
 
   const kCurIndex = kCurToken.address.toLowerCase() < cUsdToken.address.toLowerCase() ? 0 : 1;
   const cUsdIndex = kCurIndex ? 0 : 1;
@@ -42,7 +44,7 @@ export const getKCurPrice = async (kCurPool: Contract, cUsdPrice: number): Promi
   // eslint-disable-next-line prettier/prettier
   const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
 
-  console.log(`returning kCUR spot price: ${spotExchangeRate}`);
+  console.log(`computed kCUR spot price: ${spotExchangeRate}`);
 
   return spotExchangeRate;
 };
@@ -52,14 +54,14 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
 
   console.log("Reserve address: ", reserveContract.address);
 
-  const kCurOracleContract = await getOracleForToken(reserveContract, "kCUR", signer);
+  const kCurOracleContract = await getOracleForToken(reserveContract, "kCur", signer);
 
   console.log("kCUR Oracle address: ", kCurOracleContract.address);
   console.log("Updating kCUR oracle");
 
   const tx = await updateOracle(kCurOracleContract, kcurPrice);
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  console.log(`Update kCUR oracle tx hash: ${tx.hash}`);
+  console.log(`Updated kCUR oracle tx hash: ${tx.hash}`);
   // const mined = await tx.wait();
 
 
