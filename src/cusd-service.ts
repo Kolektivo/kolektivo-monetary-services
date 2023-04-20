@@ -24,9 +24,5 @@ export const executeCusdService = async (coinGeckoApiKey: string, signer: Defend
   console.log(`Update cUSD oracle tx hash: ${txcUsd.hash}`);
   // const mined = await tx.wait();
 
-  /**
-   * TODO: write the price to Mento Oracle
-   */
-
   return cusdPrice;
 };
