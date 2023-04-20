@@ -18,8 +18,8 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
   const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
   const kCurSupplyValue = Number.parseFloat(formatEther(await kCurContract.totalSupply())) * kCurPrice;
 
-  if (!reserveValue || !kCurSupplyValue) {
-    throw Error("getting zero for either floor or ceiling for the reserve");
+  if (!kCurSupplyValue) {
+    throw new Error("kCur totalSupply is zero");
   }
   const floor = reserveValue / kCurSupplyValue;
   console.log(`reserve floor: ${floor}`);
