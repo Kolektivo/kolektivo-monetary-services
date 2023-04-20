@@ -3,7 +3,7 @@ import { getContract } from "./contracts-service";
 import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber, BytesLike, Contract } from "ethers/lib/ethers";
+import { BigNumber, BytesLike } from "ethers/lib/ethers";
 import { formatEther } from "ethers/lib/utils";
 
 /**
@@ -50,6 +50,8 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
 };
 
 export const executeKCurService = async (kcurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
+  console.log("executing the kCurService");
+
   const reserveContract = getReserveContract(signer);
 
   console.log("Reserve address: ", reserveContract.address);
@@ -63,7 +65,6 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   console.log(`Updated kCUR oracle tx hash: ${tx.hash}`);
   // const mined = await tx.wait();
-
 
   /**
    * TODO: write the price to Mento Oracle

@@ -2,6 +2,8 @@
 const axios = require("axios");
 
 export const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Promise<number> => {
+  console.log(`fetching from CoinGecko: ${geckoTokenId}`);
+
   // const geckoTokenId = `${tokenName.toLowerCase()}-${tokenSymbol.toLowerCase()}`;
 
   const uri = `https://pro-api.coingecko.com/api/v3/coins/${geckoTokenId}?market_data=true&localization=false&community_data=false&developer_data=false&sparkline=false&x_cg_pro_api_key=${coinGeckoApiKey}`;

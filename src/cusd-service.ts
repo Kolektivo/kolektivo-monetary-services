@@ -5,6 +5,8 @@ import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-s
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 
 export const executeCusdService = async (coinGeckoApiKey: string, signer: DefenderRelaySigner): Promise<number> => {
+  console.log("executing the cUsdService");
+
   const cusdPrice = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
 
   // confirm here: https://www.coingecko.com/en/coins/celo-dollar
