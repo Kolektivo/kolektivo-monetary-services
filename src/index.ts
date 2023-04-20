@@ -39,11 +39,6 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const coinGeckoApiKey = RUNNING_LOCALLY ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
 
-  const kCurPool = getContract("kCUR Pool", signer);
-
-  const kCurPrice = await getKCurPrice(kCurPool);
-  console.log("kCUR price: ", kCurPrice);
-
   /**
    * FYI we aren't awaiting transactions to be mined.  Why, aside from the fact that Celo is fast
    * and we're asking in the signer for fast mining:
@@ -57,8 +52,13 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
    * Future versions will also include an ethers provider aware of this.
    */
 
+  const cusdPrice = await executeCusdService(coinGeckoApiKey, signer);
+
+  const kCurPool = getContract("kCUR Pool", signer);
+
+  const kCurPrice = await getKCurPrice(kCurPool, cusdPrice);
+
   await Promise.all([
-    executeCusdService(coinGeckoApiKey, signer),
     executeKCurService(kCurPrice, signer),
     executeMentoService(kCurPrice, kCurPool, signer),
     executeFloorAndCeilingService(kCurPrice, kCurPool, signer),

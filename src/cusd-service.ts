@@ -4,7 +4,7 @@ import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-s
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 
-export const executeCusdService = async (coinGeckoApiKey: string, signer: DefenderRelaySigner): Promise<void> => {
+export const executeCusdService = async (coinGeckoApiKey: string, signer: DefenderRelaySigner): Promise<number> => {
   const cusdPrice = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
 
   // confirm here: https://www.coingecko.com/en/coins/celo-dollar
@@ -23,4 +23,10 @@ export const executeCusdService = async (coinGeckoApiKey: string, signer: Defend
   // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
   console.log(`Update cUSD oracle tx hash: ${txcUsd.hash}`);
   // const mined = await tx.wait();
+
+  /**
+   * TODO: write the price to Mento Oracle
+   */
+
+  return cusdPrice;
 };

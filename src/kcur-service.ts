@@ -15,7 +15,7 @@ interface IPoolTokensStruct {
   lastChangeBlock: BigNumber;
 }
 
-export const getKCurPrice = async (kCurPool: Contract): Promise<number> => {
+export const getKCurPrice = async (kCurPool: Contract, cUsdPrice: number): Promise<number> => {
   const vault = getContract("Symmetric-Vault");
 
   const kCurToken = getContract("kCUR");
@@ -32,9 +32,9 @@ export const getKCurPrice = async (kCurPool: Contract): Promise<number> => {
   const poolInfo: IPoolTokensStruct = await vault.getPoolTokens(poolId);
 
   const Bi = Number.parseFloat(formatEther(poolInfo.balances[cUsdIndex])); // cUsdBalance
-  const Bo = Number.parseFloat(formatEther(poolInfo.balances[kCurIndex])); // kCURBalance
+  const Bo = Number.parseFloat(formatEther(poolInfo.balances[kCurIndex])); // kCurBalance
   const Wi = Number.parseFloat(formatEther(weights[cUsdIndex])); // cUsdWeight
-  const Wo = Number.parseFloat(formatEther(weights[kCurIndex])); // kCURWeight
+  const Wo = Number.parseFloat(formatEther(weights[kCurIndex])); // kCurWeight
 
   /**
    * see here: https://docs.balancer.fi/reference/math/weighted-math.html#spot-price
@@ -42,7 +42,7 @@ export const getKCurPrice = async (kCurPool: Contract): Promise<number> => {
   // eslint-disable-next-line prettier/prettier
   const spotExchangeRate = (Bi / Wi) / (Bo / Wo);
 
-  return Promise.resolve(spotExchangeRate);
+  return spotExchangeRate * cUsdPrice;
 };
 
 export const executeKCurService = async (kcurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
