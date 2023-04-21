@@ -15,7 +15,7 @@ interface IPoolTokensStruct {
   lastChangeBlock: BigNumber;
 }
 
-const serviceName = "kCur Price Service";
+const serviceName = "kCur Service";
 
 export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number | undefined> => {
   let spotExchangeRate: number;

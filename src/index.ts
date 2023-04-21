@@ -5,7 +5,7 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./abi-service";
 import { executeCusdService } from "./cusd-service";
-import { failedStatus, initializeErrorHandler, logMessage } from "./errors-service";
+import { failedStatus, initializeErrorHandler, logMessage, logWarning } from "./errors-service";
 import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./kcur-service";
 import { executeMentoService } from "./mento-arbitrage-service";
@@ -16,7 +16,7 @@ import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-clien
 import { RelayerModel } from "defender-relay-client/lib/relayer";
 
 export const RUNNING_LOCALLY = require.main === module;
-const serviceName = "Autotask handler";
+const serviceName = "Handler";
 
 export interface IRunContext {
   notificationClient?: INotificationClient;
@@ -62,7 +62,7 @@ export async function handler(event: IAutoRelayHandler, context: IRunContext): P
 
   if (cusdPrice == undefined) {
     cusdPrice = 1; // good enough and doesn't fail the other service
-    logMessage(serviceName, "Due to an error, defaulting cusdPrice to 1");
+    logWarning(serviceName, "Due to an error, defaulting cusdPrice to 1");
   }
 
   const kCurPrice = await getKCurPrice(cusdPrice, signer);
@@ -78,7 +78,7 @@ export async function handler(event: IAutoRelayHandler, context: IRunContext): P
   ]);
 
   if (failedStatus) {
-    throw new Error("One of more services failed");
+    throw new Error("One or more services failed");
   } else {
     return "Succeeded";
   }

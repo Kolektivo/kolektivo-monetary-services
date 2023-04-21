@@ -4,7 +4,7 @@ import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-s
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 
-const serviceName = "cUSD Price Service";
+const serviceName = "cUSD Service";
 
 export const executeCusdService = async (
   coinGeckoApiKey: string,

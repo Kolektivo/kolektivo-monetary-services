@@ -5,7 +5,7 @@ import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { Contract } from "ethers/lib/ethers";
 import { formatEther } from "ethers/lib/utils";
 
-const serviceName = "Floor and Ceiling Service";
+const serviceName = "FloorCeiling Service";
 
 export const executeFloorAndCeilingService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
   logMessage(serviceName, "executing  the FloorAndCeilingService");

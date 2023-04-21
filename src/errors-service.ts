@@ -27,7 +27,7 @@ const _serviceFailed = (serviceName: string, message: string, stack?: string): v
   /**
    * this will go to the Autotask log
    */
-  logMessage(serviceName, message);
+  logError(serviceName, message);
 };
 
 export const serviceFailed = (serviceName: string, message: string): void => {
@@ -42,4 +42,14 @@ export const serviceThrewException = (serviceName: string, ex: unknown): void =>
 export const logMessage = (prefix: string, ...message: unknown[]): void => {
   // eslint-disable-next-line no-console
   console.log(`${prefix}: ${message.join(" ")}`);
+};
+
+export const logError = (prefix: string, ...message: unknown[]): void => {
+  // eslint-disable-next-line no-console
+  console.error(`${prefix}: ${message.join(" ")}`);
+};
+
+export const logWarning = (prefix: string, ...message: unknown[]): void => {
+  // eslint-disable-next-line no-console
+  console.warn(`${prefix}: ${message.join(" ")}`);
 };

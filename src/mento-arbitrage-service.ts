@@ -3,7 +3,7 @@ import { logMessage, serviceThrewException } from "./errors-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 
-const serviceName = "Mento Arbitrage Service";
+const serviceName = "Mento Service";
 
 export const executeMentoService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
   logMessage(serviceName, "executing  the MentoService");
