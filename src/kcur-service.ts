@@ -18,8 +18,6 @@ interface IPoolTokensStruct {
 const serviceName = "kCur Service";
 
 export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number | undefined> => {
-  let spotExchangeRate: number;
-
   const vault = getContract("Symmetric-Vault", signer);
 
   const kCurToken = getContract("kCur", signer);
@@ -48,7 +46,7 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
    * multiple times cUsdPrice because the exchange rate is in terms of cUSD
    */
   // eslint-disable-next-line prettier/prettier
-  spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
+  const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
 
   logMessage(serviceName, `computed kCUR spot price: ${spotExchangeRate}`);
 
