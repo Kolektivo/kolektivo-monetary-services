@@ -12,8 +12,12 @@ export interface INotificationClient {
  * @param message
  * @param context is an argument to the handler
  */
-export const sendNotification = (context: { notificationClient?: INotificationClient }, message: string, subject: string, channel = "Kolektivo Notifications") => {
-  const { notificationClient } = context;
+export const sendNotification = (
+  notificationClient: INotificationClient | undefined,
+  message: string,
+  subject: string,
+  channel = "Kolektivo Notifications",
+) => {
   // is not set when running locally
   if (notificationClient) {
     try {

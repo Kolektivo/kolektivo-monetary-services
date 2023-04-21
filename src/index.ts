@@ -5,8 +5,8 @@
 /* eslint-disable no-console */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./abi-service";
-import { getContract } from "./contracts-service";
 import { executeCusdService } from "./cusd-service";
+import { failedStatus, initializeErrorHandler } from "./errors-service";
 import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./kcur-service";
 import { executeMentoService } from "./mento-arbitrage-service";
@@ -18,6 +18,10 @@ import { RelayerModel } from "defender-relay-client/lib/relayer";
 
 export const RUNNING_LOCALLY = require.main === module;
 
+export interface IRunContext {
+  notificationClient?: INotificationClient;
+}
+
 /********************************
  * Autotask entrypoint for the entire service
  *
@@ -26,7 +30,9 @@ export const RUNNING_LOCALLY = require.main === module;
  * @returns I believe can be used to trigger notifications
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function handler(event: IAutoRelayHandler, context: { notificationClient?: INotificationClient }): Promise<string> {
+export async function handler(event: IAutoRelayHandler, context: IRunContext): Promise<string> {
+  initializeErrorHandler(context.notificationClient);
+
   fetchAbis();
 
   const relayer = new Relayer(event);
@@ -52,9 +58,18 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
    * Future versions will also include an ethers provider aware of this.
    */
 
-  const cusdPrice = await executeCusdService(coinGeckoApiKey, signer);
+  let cusdPrice = await executeCusdService(coinGeckoApiKey, signer);
+
+  if (cusdPrice == undefined) {
+    cusdPrice = 1; // good enough and doesn't fail the other service
+    console.log("Due to an error, defaulting cusdPrice to 1");
+  }
 
   const kCurPrice = await getKCurPrice(cusdPrice, signer);
+
+  if (kCurPrice === undefined) {
+    throw new Error("Cannot proceed, all services depend on the kCur price, which could not be obtained");
+  }
 
   await Promise.all([
     executeKCurService(kCurPrice, signer),
@@ -62,10 +77,11 @@ export async function handler(event: IAutoRelayHandler, context: { notificationC
     executeFloorAndCeilingService(kCurPrice, signer),
   ]);
 
-  // this actually works!
-  // sendNotification(context, "Autotask notification", "Autorun has succeeded");
-
-  return "Success";
+  if (failedStatus) {
+    throw new Error("One of more services failed");
+  } else {
+    return "Succeeded";
+  }
 }
 
 /*************************************

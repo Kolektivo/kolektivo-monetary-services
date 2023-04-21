@@ -1,30 +1,48 @@
 /* eslint-disable no-console */
 import { getTokenGeckoPrice } from "./coingecko-service";
+import { serviceThrewException } from "./errors-service";
 import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 
-export const executeCusdService = async (coinGeckoApiKey: string, signer: DefenderRelaySigner): Promise<number> => {
+export const executeCusdService = async (
+  coinGeckoApiKey: string,
+  signer: DefenderRelaySigner,
+): Promise<number | undefined> => {
   console.log("executing the cUsdService");
 
-  const cusdPrice = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
+  let cusdPrice!: number;
 
-  // confirm here: https://www.coingecko.com/en/coins/celo-dollar
-  console.log("cUSD price: ", cusdPrice);
+  try {
+    cusdPrice = await getTokenGeckoPrice("celo-dollar", coinGeckoApiKey);
+  } catch (ex) {
+    serviceThrewException("cUSD Price Service", ex);
+    return undefined;
+  }
 
-  const reserveContract = getReserveContract(signer);
+  try {
+    // confirm here: https://www.coingecko.com/en/coins/celo-dollar
+    console.log("cUSD price: ", cusdPrice);
 
-  console.log("Reserve address: ", reserveContract.address);
+    const reserveContract = getReserveContract(signer);
 
-  const cUsdOracleContract = await getOracleForToken(reserveContract, "cUSD", signer);
+    console.log("Reserve address: ", reserveContract.address);
 
-  console.log("cUSD Oracle address: ", cUsdOracleContract.address);
-  console.log("Updating cUSD oracle");
+    const cUsdOracleContract = await getOracleForToken(reserveContract, "cUSD", signer);
 
-  const txcUsd = await updateOracle(cUsdOracleContract, cusdPrice);
-  // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-  console.log(`Updated cUSD oracle tx hash: ${txcUsd.hash}`);
-  // const mined = await tx.wait();
+    console.log("cUSD Oracle address: ", cUsdOracleContract.address);
+    console.log("Updating cUSD oracle");
+
+    const txcUsd = await updateOracle(cUsdOracleContract, cusdPrice);
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    console.log(`Updated cUSD oracle tx hash: ${txcUsd.hash}`);
+    // const mined = await tx.wait();
+  } catch (ex) {
+    serviceThrewException("cUSD Price Service", ex);
+    /**
+     * we will continue on to at least return the value of cusdPrice, allowing other services to continue
+     */
+  }
 
   return cusdPrice;
 };

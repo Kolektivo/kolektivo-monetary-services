@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { getContract } from "./contracts-service";
+import { serviceThrewException } from "./errors-service";
 import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
@@ -15,34 +16,43 @@ interface IPoolTokensStruct {
   lastChangeBlock: BigNumber;
 }
 
-export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number> => {
-  const vault = getContract("Symmetric-Vault", signer);
+export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number | undefined> => {
+  let spotExchangeRate: number;
 
-  const kCurToken = getContract("kCur", signer);
-  const cUsdToken = getContract("cUSD", signer);
+  try {
+    const vault = getContract("Symmetric-Vault", signer);
 
-  const kCurPool = getContract("kCur Pool", signer);
+    const kCurToken = getContract("kCur", signer);
+    const cUsdToken = getContract("cUSD", signer);
 
-  const kCurIndex = kCurToken.address.toLowerCase() < cUsdToken.address.toLowerCase() ? 0 : 1;
-  const cUsdIndex = kCurIndex ? 0 : 1;
+    const kCurPool = getContract("kCur Pool", signer);
 
-  /**
-   * see here: https://www.notion.so/curvelabs/Symmetric-Pools-ec2dcc480c6b440db734caf515840fa8?pvs=4#64bb38994a77416aadba3890bcfb4375
-   */
-  const weights: Array<BigNumber> = await kCurPool.getNormalizedWeights();
-  const poolId: BytesLike = await kCurPool.getPoolId();
-  const poolInfo: IPoolTokensStruct = await vault.getPoolTokens(poolId);
+    const kCurIndex = kCurToken.address.toLowerCase() < cUsdToken.address.toLowerCase() ? 0 : 1;
+    const cUsdIndex = kCurIndex ? 0 : 1;
 
-  const Bi = Number.parseFloat(formatEther(poolInfo.balances[cUsdIndex])); // cUsdBalance
-  const Bo = Number.parseFloat(formatEther(poolInfo.balances[kCurIndex])); // kCurBalance
-  const Wi = Number.parseFloat(formatEther(weights[cUsdIndex])); // cUsdWeight
-  const Wo = Number.parseFloat(formatEther(weights[kCurIndex])); // kCurWeight
+    /**
+     * see here: https://www.notion.so/curvelabs/Symmetric-Pools-ec2dcc480c6b440db734caf515840fa8?pvs=4#64bb38994a77416aadba3890bcfb4375
+     */
+    const weights: Array<BigNumber> = await kCurPool.getNormalizedWeights();
+    const poolId: BytesLike = await kCurPool.getPoolId();
+    const poolInfo: IPoolTokensStruct = await vault.getPoolTokens(poolId);
 
-  /**
-   * see here: https://docs.balancer.fi/reference/math/weighted-math.html#spot-price
-   */
-  // eslint-disable-next-line prettier/prettier
-  const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
+    const Bi = Number.parseFloat(formatEther(poolInfo.balances[cUsdIndex])); // cUsdBalance
+    const Bo = Number.parseFloat(formatEther(poolInfo.balances[kCurIndex])); // kCurBalance
+    const Wi = Number.parseFloat(formatEther(weights[cUsdIndex])); // cUsdWeight
+    const Wo = Number.parseFloat(formatEther(weights[kCurIndex])); // kCurWeight
+
+    /**
+     * see here: https://docs.balancer.fi/reference/math/weighted-math.html#spot-price
+     *
+     * multiple times cUsdPrice because the exchange rate is in terms of cUSD
+     */
+    // eslint-disable-next-line prettier/prettier
+    spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
+  } catch (ex) {
+    serviceThrewException("kCur Price Service", ex);
+    return undefined;
+  }
 
   console.log(`computed kCUR spot price: ${spotExchangeRate}`);
 
