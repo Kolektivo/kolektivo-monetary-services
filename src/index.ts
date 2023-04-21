@@ -5,11 +5,11 @@
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./abi-service";
 import { executeCusdService } from "./cusd-service";
-import { failedStatus, initializeErrorHandler, logMessage, logWarning } from "./errors-service";
+import { failedStatus, logMessage, logWarning } from "./errors-service";
 import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./kcur-service";
 import { executeMentoService } from "./mento-arbitrage-service";
-import { INotificationClient } from "./notifications";
+import { initializeNotifications, INotificationClient } from "./notifications";
 
 import { Relayer } from "defender-relay-client";
 import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-client/lib/ethers";
@@ -30,8 +30,8 @@ export interface IRunContext {
  * @returns I believe can be used to trigger notifications
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function handler(event: IAutoRelayHandler, context: IRunContext): Promise<string> {
-  initializeErrorHandler(context.notificationClient);
+export async function handler(event: IAutoRelayHandler, context?: IRunContext): Promise<string> {
+  initializeNotifications(context?.notificationClient);
 
   fetchAbis();
 
@@ -103,6 +103,7 @@ if (RUNNING_LOCALLY) {
   handler({ apiKey, apiSecret, secrets: {} }, { notificationClient: undefined })
     .then(() => process.exit(0))
     .catch((error: Error) => {
+      // eslint-disable-next-line no-console
       console.error(error);
       process.exit(1);
     });

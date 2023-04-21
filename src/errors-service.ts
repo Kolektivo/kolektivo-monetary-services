@@ -1,16 +1,11 @@
-import { INotificationClient, sendNotification } from "./notifications";
+import { sendNotification } from "./notifications";
 
 interface IError {
   message: string;
   stack: string;
 }
 
-let notificationsClient: INotificationClient | undefined;
 export let failedStatus = false;
-
-export const initializeErrorHandler = (client?: INotificationClient) => {
-  notificationsClient = client;
-};
 
 const _serviceFailed = (serviceName: string, message: string, stack?: string): void => {
   failedStatus = true;
@@ -18,9 +13,7 @@ const _serviceFailed = (serviceName: string, message: string, stack?: string): v
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   message = `${message}\r\n${stack ?? "no stack trace available"}`;
   try {
-    if (notificationsClient) {
-      sendNotification(notificationsClient, subject, message);
-    }
+    sendNotification(subject, message);
   } catch {
     /* empty */
   }
