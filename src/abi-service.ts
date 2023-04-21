@@ -1,4 +1,5 @@
-/* eslint-disable no-console */
+import { logMessage } from "./errors-service";
+
 export interface IContractInfo {
   address: string;
   abi: Array<any>;
@@ -31,7 +32,7 @@ let sharedAbis: ISharedContractInfos;
 export const fetchAbis = (): void => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!abis) {
-    console.log("fetching abis");
+    logMessage("abi-service", "fetching abis");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     // TODO restore this when ready for production: abis = require(`./abis/${RUNNING_LOCALLY ? "celo-test.json" : "celo.json"}`);
     abis = require("./abis/celo-test.json");

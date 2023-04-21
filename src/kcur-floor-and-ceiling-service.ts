@@ -1,14 +1,14 @@
-/* eslint-disable no-console */
-
 import { getContract } from "./contracts-service";
-import { serviceThrewException } from "./errors-service";
+import { logMessage, serviceThrewException } from "./errors-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { Contract } from "ethers/lib/ethers";
 import { formatEther } from "ethers/lib/utils";
 
+const serviceName = "Floor and Ceiling Service";
+
 export const executeFloorAndCeilingService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
-  console.log("executing  the FloorAndCeilingService");
+  logMessage(serviceName, "executing  the FloorAndCeilingService");
 
   try {
     const kGuilderPrice = 1.79;
@@ -24,16 +24,16 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
       throw new Error("kCur totalSupply is zero");
     }
     const floor = reserveValue / kCurSupplyValue;
-    console.log(`reserve floor: ${floor}`);
+    logMessage(serviceName, `reserve floor: ${floor}`);
 
     //price ceiling is defined in the BL as Price Floor * Ceiling Multiplier
     //TODO get ceiling multiplier from the proxy contract when we get it
     const ceiling = floor * 1.9;
-    console.log(`reserve ceiling: ${ceiling}`);
+    logMessage(serviceName, `reserve ceiling: ${ceiling}`);
 
     const proxyContract = {} as Contract; // getContract("proxy", signer);
   } catch (ex) {
-    serviceThrewException("Floor and Ceiling Service", ex);
+    serviceThrewException(serviceName, ex);
   }
   return await Promise.resolve();
 };

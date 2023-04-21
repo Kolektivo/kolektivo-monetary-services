@@ -2,11 +2,10 @@
  * the packages available in the Autotask execution environment:
  *    https://docs.openzeppelin.com/defender/autotasks#environment
  */
-/* eslint-disable no-console */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./abi-service";
 import { executeCusdService } from "./cusd-service";
-import { failedStatus, initializeErrorHandler } from "./errors-service";
+import { failedStatus, initializeErrorHandler, logMessage } from "./errors-service";
 import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./kcur-service";
 import { executeMentoService } from "./mento-arbitrage-service";
@@ -17,6 +16,7 @@ import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-clien
 import { RelayerModel } from "defender-relay-client/lib/relayer";
 
 export const RUNNING_LOCALLY = require.main === module;
+const serviceName = "Autotask handler";
 
 export interface IRunContext {
   notificationClient?: INotificationClient;
@@ -37,7 +37,7 @@ export async function handler(event: IAutoRelayHandler, context: IRunContext): P
 
   const relayer = new Relayer(event);
   const info: RelayerModel = await relayer.getRelayer();
-  console.log(`Relayer address is ${info.address}`);
+  logMessage(serviceName, `Relayer address is ${info.address}`);
 
   const provider = new DefenderRelayProvider(event);
   const signer = new DefenderRelaySigner(event, provider, { speed: "fast" });
@@ -62,7 +62,7 @@ export async function handler(event: IAutoRelayHandler, context: IRunContext): P
 
   if (cusdPrice == undefined) {
     cusdPrice = 1; // good enough and doesn't fail the other service
-    console.log("Due to an error, defaulting cusdPrice to 1");
+    logMessage(serviceName, "Due to an error, defaulting cusdPrice to 1");
   }
 
   const kCurPrice = await getKCurPrice(cusdPrice, signer);

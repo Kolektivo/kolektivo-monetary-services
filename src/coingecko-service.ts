@@ -1,8 +1,10 @@
+import { logMessage } from "./errors-service";
+
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require("axios");
 
 export const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Promise<number> => {
-  console.log(`fetching from CoinGecko: ${geckoTokenId}`);
+  logMessage("coingecko-service", `fetching from CoinGecko: ${geckoTokenId}`);
 
   // const geckoTokenId = `${tokenName.toLowerCase()}-${tokenSymbol.toLowerCase()}`;
 
