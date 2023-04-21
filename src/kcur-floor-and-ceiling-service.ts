@@ -11,8 +11,11 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
   logMessage(serviceName, "executing  the FloorAndCeilingService");
 
   try {
-    const kGuilderPrice = 1.79;
-
+    /**
+     * 1.79 fiat Guilder is hardcoded to 1 $USD
+     * one kG meant to be pegged to 1 fiat Guilder, one-to-one
+     * one kCUR is meant to be fixed to one kGuilder, by USD value
+     */
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("kCur", signer);
 
