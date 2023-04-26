@@ -70,10 +70,6 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     logMessage(serviceName, `Updated kCUR oracle tx hash: ${tx.hash}`);
     // const mined = await tx.wait();
-
-    /**
-     * TODO: write the price to Mento Oracle
-     */
   } catch (ex) {
     serviceThrewException(serviceName, ex);
     return undefined;

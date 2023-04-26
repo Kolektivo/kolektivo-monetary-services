@@ -9,6 +9,7 @@ import { failedStatus, logMessage, logWarning } from "./errors-service";
 import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./kcur-service";
 import { executeMentoService } from "./mento-arbitrage-service";
+import { executeMentoOracleService } from "./mento-oracle-service";
 import { initializeNotifications, INotificationClient } from "./notifications";
 
 import { Relayer } from "defender-relay-client";
@@ -73,6 +74,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
 
   await Promise.all([
     executeKCurService(kCurPrice, signer),
+    executeMentoOracleService(kCurPrice, signer),
     executeMentoService(kCurPrice, signer),
     executeFloorAndCeilingService(kCurPrice, signer),
   ]);
