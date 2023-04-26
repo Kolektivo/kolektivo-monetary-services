@@ -1,6 +1,6 @@
-import { getTokenGeckoPrice } from "./coingecko-service";
-import { logMessage, serviceThrewException } from "./errors-service";
-import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-service";
+import { getTokenGeckoPrice } from "../helpers/coingecko-service";
+import { logMessage, serviceThrewException } from "../helpers/errors-service";
+import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 

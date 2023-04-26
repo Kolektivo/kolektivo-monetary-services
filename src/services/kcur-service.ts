@@ -1,6 +1,6 @@
-import { getContract } from "./contracts-service";
-import { logMessage, serviceThrewException } from "./errors-service";
-import { getOracleForToken, getReserveContract, updateOracle } from "./reserve-service";
+import { getContract } from "../helpers/contracts-service";
+import { logMessage, serviceThrewException } from "../helpers/errors-service";
+import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber, BytesLike } from "ethers/lib/ethers";
@@ -48,9 +48,10 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
   // eslint-disable-next-line prettier/prettier
   const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
 
-  logMessage(serviceName, `computed kCUR spot price: ${spotExchangeRate}`);
+  logMessage(serviceName, `kCUR spot price: ${spotExchangeRate}`);
+  logMessage(serviceName, `fake kCUR spot price: 0.55`);
 
-  return spotExchangeRate;
+  return 0.55; // spotExchangeRate;
 };
 
 export const executeKCurService = async (kcurPrice: number, signer: DefenderRelaySigner): Promise<void> => {

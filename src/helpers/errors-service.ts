@@ -1,4 +1,4 @@
-import { sendNotification } from "./notifications";
+import { sendNotification } from "./notifications-service";
 
 interface IError {
   message: string;

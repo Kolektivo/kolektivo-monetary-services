@@ -35,13 +35,13 @@ export const fetchAbis = (): void => {
     logMessage("abi-service", "fetching abis");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     // TODO restore this when ready for production: abis = require(`./abis/${RUNNING_LOCALLY ? "celo-test.json" : "celo.json"}`);
-    abis = require("./abis/celo-test.json");
+    abis = require("../abis/celo-test.json");
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     if (!abis) {
       throw new Error("abis not found");
     }
 
-    sharedAbis = require(`./abis/sharedAbis.json`);
+    sharedAbis = require(`../abis/sharedAbis.json`);
   }
 };
 

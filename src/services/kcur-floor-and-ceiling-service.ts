@@ -1,5 +1,5 @@
-import { getContract } from "./contracts-service";
-import { logMessage, serviceThrewException } from "./errors-service";
+import { getContract } from "../helpers/contracts-service";
+import { logMessage, serviceThrewException } from "../helpers/errors-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { Contract } from "ethers/lib/ethers";
@@ -8,7 +8,7 @@ import { formatEther } from "ethers/lib/utils";
 const serviceName = "FloorCeiling Service";
 
 export const executeFloorAndCeilingService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
-  logMessage(serviceName, "executing  the FloorAndCeilingService");
+  logMessage(serviceName, "executing the FloorAndCeilingService");
 
   try {
     /**
@@ -21,12 +21,12 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
 
     //price floor is defined in the BL as Reserve Value / kCUR Supply
     const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
-    const kCurSupplyValue = Number.parseFloat(formatEther(await kCurContract.totalSupply())) * kCurPrice;
+    const kCurTotalSupply = Number.parseFloat(formatEther(await kCurContract.totalSupply()));
 
-    if (!kCurSupplyValue) {
+    if (!kCurTotalSupply) {
       throw new Error("kCur totalSupply is zero");
     }
-    const floor = reserveValue / kCurSupplyValue;
+    const floor = reserveValue / kCurTotalSupply;
     logMessage(serviceName, `reserve floor: ${floor}`);
 
     //price ceiling is defined in the BL as Price Floor * Ceiling Multiplier

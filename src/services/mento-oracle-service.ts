@@ -1,4 +1,4 @@
-import { logMessage, serviceThrewException } from "./errors-service";
+import { logMessage, serviceThrewException } from "../helpers/errors-service";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 

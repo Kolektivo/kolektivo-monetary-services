@@ -3,14 +3,14 @@
  *    https://docs.openzeppelin.com/defender/autotasks#environment
  */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-import { fetchAbis, IAutoRelayHandler } from "./abi-service";
-import { executeCusdService } from "./cusd-service";
-import { failedStatus, logMessage, logWarning } from "./errors-service";
-import { executeFloorAndCeilingService } from "./kcur-floor-and-ceiling-service";
-import { executeKCurService, getKCurPrice } from "./kcur-service";
-import { executeMentoService } from "./mento-arbitrage-service";
-import { executeMentoOracleService } from "./mento-oracle-service";
-import { initializeNotifications, INotificationClient } from "./notifications";
+import { fetchAbis, IAutoRelayHandler } from "./helpers/abi-service";
+import { failedStatus, logMessage, logWarning } from "./helpers/errors-service";
+import { initializeNotifications, INotificationClient } from "./helpers/notifications-service";
+import { executeCusdService } from "./services/cusd-service";
+import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
+import { executeKCurService, getKCurPrice } from "./services/kcur-service";
+import { executeMentoService } from "./services/mento-arbitrage-service";
+import { executeMentoOracleService } from "./services/mento-oracle-service";
 
 import { Relayer } from "defender-relay-client";
 import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-client/lib/ethers";
