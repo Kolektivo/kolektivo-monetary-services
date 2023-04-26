@@ -49,9 +49,12 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
   const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
 
   logMessage(serviceName, `kCUR spot price: ${spotExchangeRate}`);
-  logMessage(serviceName, `fake kCUR spot price: 0.55`);
 
-  return 0.55; // spotExchangeRate;
+  const random = (min: number, max: number): number => Math.floor(Math.random() * (max - min)) + min;
+  const fake = 0.54 + random(0, 100) / 5000;
+  logMessage(serviceName, `fake kCUR spot price: ${fake}`);
+
+  return fake; // spotExchangeRate;
 };
 
 export const executeKCurService = async (kcurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
