@@ -1,4 +1,4 @@
-import { logMessage } from "./errors-service";
+import { logMessage } from "./errors-helper";
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const axios = require("axios");

@@ -1,5 +1,5 @@
-import { getContractAbi, getContractAddress } from "./abi-service";
-import { getContract } from "./contracts-service";
+import { getContractAbi, getContractAddress } from "./abi-helper";
+import { getContract } from "./contracts-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { ethers } from "ethers";

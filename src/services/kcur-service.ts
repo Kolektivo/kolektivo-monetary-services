@@ -1,6 +1,6 @@
-import { getContract } from "../helpers/contracts-service";
-import { logMessage, serviceThrewException } from "../helpers/errors-service";
-import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-service";
+import { getContract } from "../helpers/contracts-helper";
+import { logMessage, serviceThrewException } from "../helpers/errors-helper";
+import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber, BytesLike } from "ethers/lib/ethers";

@@ -1,5 +1,5 @@
-import { getContract } from "../helpers/contracts-service";
-import { logMessage, serviceThrewException } from "../helpers/errors-service";
+import { getContract } from "../helpers/contracts-helper";
+import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { Contract } from "ethers/lib/ethers";

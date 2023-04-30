@@ -1,4 +1,4 @@
-import { logMessage } from "./errors-service";
+import { logMessage } from "./errors-helper";
 
 export interface IContractInfo {
   address: string;
