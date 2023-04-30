@@ -43,7 +43,8 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
   /**
    * see here: https://docs.balancer.fi/reference/math/weighted-math.html#spot-price
    *
-   * multiple times cUsdPrice because the exchange rate is in terms of cUSD
+   * multiple times cUsdPrice because the exchange rate is in terms of cUSD.  We aren't assuming
+   * cUsd is 1-to-1 with fiat USD.
    */
   // eslint-disable-next-line prettier/prettier
   const spotExchangeRate = (Bi / Wi) / (Bo / Wo) * cUsdPrice;
