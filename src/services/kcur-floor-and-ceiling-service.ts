@@ -12,12 +12,12 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
 
   try {
     /**
-     * 1.79 fiat Guilder is hardcoded to 1 $USD
-     * one kG meant to be pegged to 1 fiat Guilder, one-to-one
-     * one kCUR is meant to be fixed to one kGuilder, by USD value
+     * 1.79 Guilder is hardcoded to 1 $USD
+     * one kG meant to be pegged to 1 Guilder, one-to-one
+     * balance of kCUR in Mento Reserve is meant to be fixed to the totalSupply of kGuilder
      */
     const reserveContract = getContract("Reserve", signer);
-    const kCurContract = getContract("kCur", signer);
+    const kCurContract = getContract("CuracaoReserveToken", signer);
 
     //price floor is defined in the BL as Reserve Value / kCUR Supply
     const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));

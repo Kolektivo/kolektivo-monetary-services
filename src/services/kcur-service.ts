@@ -18,7 +18,7 @@ interface IPoolTokensStruct {
 const serviceName = "kCur Service";
 
 export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number | undefined> => {
-  const vault = getContract("Symmetric-Vault", signer);
+  const vault = getContract("Vault", signer);
 
   const kCurToken = getContract("CuracaoReserveToken", signer);
   const cUsdToken = getContract("cUSD", signer);

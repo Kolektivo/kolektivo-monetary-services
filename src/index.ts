@@ -17,6 +17,7 @@ import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-clien
 import { RelayerModel } from "defender-relay-client/lib/relayer";
 
 export const RUNNING_LOCALLY = require.main === module;
+
 const serviceName = "Handler";
 
 export interface IRunContext {
