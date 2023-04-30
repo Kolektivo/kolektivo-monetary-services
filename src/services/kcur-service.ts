@@ -20,7 +20,7 @@ const serviceName = "kCur Service";
 export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigner): Promise<number | undefined> => {
   const vault = getContract("Symmetric-Vault", signer);
 
-  const kCurToken = getContract("kCur", signer);
+  const kCurToken = getContract("CuracaoReserveToken", signer);
   const cUsdToken = getContract("cUSD", signer);
 
   const kCurPool = getContract("kCur Pool", signer);
@@ -65,7 +65,7 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
 
     logMessage(serviceName, "Reserve address: ", reserveContract.address);
 
-    const kCurOracleContract = await getOracleForToken(reserveContract, "kCur", signer);
+    const kCurOracleContract = await getOracleForToken(reserveContract, "CuracaoReserveToken", signer);
 
     logMessage(serviceName, "kCUR Oracle address: ", kCurOracleContract.address);
     logMessage(serviceName, "Updating kCUR oracle");

@@ -24,7 +24,7 @@ export const getOracleForToken = async (
 
   const oracleAbi = getContractAbi("Oracle");
 
-  if (erc20Name === "kCur") {
+  if (erc20Name === "CuracaoReserveToken") {
     oracleAddress = await reserveContract.tokenOracle();
     // then is the reserve token
   } else {

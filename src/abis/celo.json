@@ -593,6 +593,9 @@
         }
       ]
     },
+    "KolektivoMultiSig": {
+      "address": "0xcE960DcafC201a1B4440ed5F6B63A7772a34b2Ab"
+    },
     "Oracle": {
       "address": "0x0000000000000000000000000000000000000000",
       "abi": [
@@ -3499,7 +3502,7 @@
         }
       ]
     },
-    "kCur": {
+    "Kolektivo Curacao Reserve Token": {
       "address": "0x0000000000000000000000000000000000000000",
       "abi": "ERC20"
     },
@@ -9820,6 +9823,7 @@
       ]
     },
     "kGuilder Pool": {
+      "address": "0x0000000000000000000000000000000000000000",
       "abi": [
         {
           "inputs": [
@@ -10906,6 +10910,7 @@
       ]
     },
     "kCur Pool": {
+      "address": "0x0000000000000000000000000000000000000000",
       "abi": [
         {
           "inputs": [
