@@ -36,7 +36,7 @@ const sendBuyOrSell = async (
 ): Promise<{ hash: string }> => {
   const bac = getContract("BAC", signer);
 
-  const mentoExchange = getContract("MentoExchange", signer);
+  const mentoExchange = getContract("Exchange", signer);
 
   // get function params for execTransactionFromModule from TransactionLike object
   const txLike = await mentoExchange.populateTransaction[buy ? "buy" : "sell"](
@@ -84,7 +84,7 @@ export const executeMentoService = async (
     /**
      * aprove withdrawal from the spend account
      */
-    const mentoExchangeAddress = getContractAddress("MentoExchange");
+    const mentoExchangeAddress = getContractAddress("Exchange");
     /**
      * tell kCUR token to allow the MentoExchange (spender) to spend kCUR on behalf of the Relayer (owner)
      */
