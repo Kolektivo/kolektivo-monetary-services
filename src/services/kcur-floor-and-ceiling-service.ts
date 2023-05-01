@@ -18,6 +18,7 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
      */
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("CuracaoReserveToken", signer);
+    const proxyContract = {} as Contract; // getContract("proxy", signer);
 
     //price floor is defined in the BL as Reserve Value / kCUR Supply
     const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
@@ -29,12 +30,12 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
     const floor = reserveValue / kCurTotalSupply;
     logMessage(serviceName, `reserve floor: ${floor}`);
 
+    const ceilingMultiplier = Number.parseFloat(formatEther(await proxyContract.ceilingMultiplier()));
+
     //price ceiling is defined in the BL as Price Floor * Ceiling Multiplier
     //TODO get ceiling multiplier from the proxy contract when we get it
-    const ceiling = floor * 1.9;
+    const ceiling = floor * ceilingMultiplier;
     logMessage(serviceName, `reserve ceiling: ${ceiling}`);
-
-    const proxyContract = {} as Contract; // getContract("proxy", signer);
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }
