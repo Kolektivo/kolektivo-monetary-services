@@ -4,6 +4,7 @@ import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
+import { constants } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 
 const serviceName = "kG-kCur Rate Service";
@@ -33,8 +34,8 @@ export const executeMentoOracleService = async (kCurPrice: number, signer: Defen
     const tx = await mentoOracleContract.report(
       kGTokenContractAddress,
       parseUnits(kGkCurExchangeRate.toString(), 24),
-      "0x0",
-      "0x0",
+      constants.AddressZero,
+      constants.AddressZero,
     );
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     logMessage(serviceName, `Updated Mento SortedOracles, tx hash: ${tx.hash}`);
