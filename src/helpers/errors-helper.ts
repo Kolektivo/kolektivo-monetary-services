@@ -7,6 +7,13 @@ interface IError {
 
 export let failedStatus = false;
 
+/**
+ * Reports the error, does not throw an exception
+ *
+ * @param serviceName
+ * @param message
+ * @param stack
+ */
 const _serviceFailed = (serviceName: string, message: string, stack?: string): void => {
   failedStatus = true;
   const subject = `A Kolektivo service has failed: ${serviceName}`;

@@ -1,10 +1,9 @@
-import { formatEther, parseEther } from "ethers/lib/utils";
-import { KGUILDER_USDPRICE } from "../globals";
+import { getContractAddress } from "../helpers/abi-helper";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { getContractAddress } from "../helpers/abi-helper";
+import { formatEther, parseEther } from "ethers/lib/utils";
 
 const serviceName = "Mento Service";
 const MENTO_BADGE_ID = 42042;
@@ -59,11 +58,16 @@ const sendBuyOrSell = async (
 export const executeMentoService = async (
   kCurPrice: number,
   relayerAddress: string,
+  kGkCurExchangeRate: number | undefined,
   signer: DefenderRelaySigner,
 ): Promise<void> => {
   logMessage(serviceName, "executing...");
 
   try {
+    if (!kGkCurExchangeRate) {
+      throw new Error(`Cannot proceed, kCUR/kG exchange rate is undefined or zero`);
+    }
+
     // const kGuilderPrice = KGUILDER_USDPRICE;
     // const kCurKGuilderRatio = 0;
     // const kGuilderPool = getContract("kGuilder Pool", signer); // getContract("kGuilderPool", signer);
@@ -100,5 +104,4 @@ export const executeMentoService = async (
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }
-  return await Promise.resolve();
 };

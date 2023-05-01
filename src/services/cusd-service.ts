@@ -36,12 +36,9 @@ export const executeCusdService = async (
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     logMessage(serviceName, `Updated cUSD Oracle, tx hash: ${txcUsd.hash}`);
     // const mined = await tx.wait();
+    return cusdPrice;
   } catch (ex) {
     serviceThrewException(serviceName, ex);
-    /**
-     * we will continue on to at least return the value of cusdPrice, allowing other services to continue
-     */
+    return undefined;
   }
-
-  return cusdPrice;
 };

@@ -10,7 +10,7 @@ import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
 import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./services/kcur-service";
-import { executeMentoOracleService } from "./services/kg-kcur-rate-service";
+import { executekGkCURService } from "./services/kg-kcur-rate-service";
 import { executeMentoService } from "./services/mento-arbitrage-service";
 
 import { Relayer } from "defender-relay-client";
@@ -73,13 +73,14 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   const kCurPrice = await getKCurPrice(cusdPrice, signer);
 
   if (kCurPrice === undefined) {
-    throw new Error("Cannot proceed, all services depend on the kCur price, which could not be obtained");
+    throw new Error("Cannot proceed, the remaining services depend on the kCur price, which could not be obtained");
   }
+
+  const kGkCurExchangeRate = await executekGkCURService(kCurPrice, signer);
 
   await Promise.all([
     executeKCurService(kCurPrice, signer),
-    executeMentoOracleService(kCurPrice, signer),
-    executeMentoService(kCurPrice, relayerInfo.address, signer),
+    executeMentoService(kCurPrice, relayerInfo.address, kGkCurExchangeRate, signer),
     executeFloorAndCeilingService(kCurPrice, signer),
   ]);
 

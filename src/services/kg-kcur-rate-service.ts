@@ -9,7 +9,12 @@ import { parseUnits } from "ethers/lib/utils";
 
 const serviceName = "kG-kCur Rate Service";
 
-export const executeMentoOracleService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
+export const executekGkCURService = async (
+  kCurPrice: number,
+  signer: DefenderRelaySigner,
+): Promise<number | undefined> => {
+  let kGkCurExchangeRate!: number;
+
   logMessage(serviceName, "executing...");
 
   try {
@@ -19,7 +24,7 @@ export const executeMentoOracleService = async (kCurPrice: number, signer: Defen
     /**
      * exchange rate, how many kG to purchase one kCUR
      */
-    const kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
+    kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
 
     const kGTokenContractAddress = getContractAddress("KolektivoGuilder");
     logMessage(serviceName, "kGuilder address: ", kGTokenContractAddress);
@@ -39,6 +44,7 @@ export const executeMentoOracleService = async (kCurPrice: number, signer: Defen
     );
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     logMessage(serviceName, `Updated Mento SortedOracles, tx hash: ${tx.hash}`);
+    return kGkCurExchangeRate;
   } catch (ex) {
     serviceThrewException(serviceName, ex);
     return undefined;
