@@ -6,6 +6,7 @@
 import { fetchAbis, IAutoRelayHandler } from "./helpers/abi-helper";
 import { failedStatus, logMessage, logWarning } from "./helpers/errors-helper";
 import { initializeNotifications, INotificationClient } from "./helpers/notifications-helper";
+import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
 import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./services/kcur-service";
@@ -46,6 +47,8 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const coinGeckoApiKey = RUNNING_LOCALLY ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
+
+  await confirmTokenBalances(signer);
 
   /**
    * FYI we aren't awaiting transactions to be mined.  Why, aside from the fact that Celo is fast

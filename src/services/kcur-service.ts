@@ -55,6 +55,7 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
   const fake = 0.54 + random(0, 100) / 5000;
   logMessage(serviceName, `fake kCUR spot price: ${fake}`);
 
+  // TODO: restore this when possible
   return fake; // spotExchangeRate;
 };
 
