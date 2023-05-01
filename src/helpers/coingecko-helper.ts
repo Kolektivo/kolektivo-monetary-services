@@ -4,7 +4,7 @@ import { logMessage } from "./errors-helper";
 const axios = require("axios");
 
 export const getTokenGeckoPrice = (geckoTokenId: string, coinGeckoApiKey: string): Promise<number> => {
-  logMessage("coingecko-service", `fetching from CoinGecko: ${geckoTokenId}`);
+  logMessage("Coingecko Helper", `fetching from CoinGecko: ${geckoTokenId}`);
 
   // const geckoTokenId = `${tokenName.toLowerCase()}-${tokenSymbol.toLowerCase()}`;
 

@@ -34,7 +34,7 @@ const sentBacTransaction = async (signer: DefenderRelaySigner): Promise<void> =>
 };
 
 export const executeMentoService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
-  logMessage(serviceName, "executing the MentoService");
+  logMessage(serviceName, "executing...");
 
   try {
     const kGuilderPrice = 1.79;

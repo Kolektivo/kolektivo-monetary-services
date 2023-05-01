@@ -60,7 +60,7 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
 };
 
 export const executeKCurService = async (kcurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
-  logMessage(serviceName, "executing the kCurService");
+  logMessage(serviceName, "executing...");
 
   try {
     const reserveContract = getReserveContract(signer);

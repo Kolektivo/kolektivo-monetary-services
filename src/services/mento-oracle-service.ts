@@ -9,19 +9,24 @@ import { parseUnits } from "ethers/lib/utils";
 const serviceName = "Mento-Oracle Service";
 
 export const executeMentoOracleService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
-  logMessage(serviceName, "executing the mentoOracleService");
+  logMessage(serviceName, "executing...");
 
   try {
     if (kCurPrice < Number.MIN_VALUE) {
       throw new Error("kCUR price is too small");
     }
+    /**
+     * exchange rate, how many kG to purchase one kCUR
+     */
     const kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
+
     const kGTokenContractAddress = getContractAddress("KolektivoGuilder");
+    logMessage(serviceName, "kGuilder address: ", kGTokenContractAddress);
 
     const mentoOracleContract = getContract("SortedOracles", signer);
+    logMessage(serviceName, "SortedOracles address: ", mentoOracleContract.address);
 
-    logMessage(serviceName, "Mento SortedOracles address: ", mentoOracleContract.address);
-    logMessage(serviceName, `Reporting ${kGkCurExchangeRate} to Mento SortedOracles`);
+    logMessage(serviceName, `Reporting ${kGkCurExchangeRate} to SortedOracles`);
     /**
      * the Relayer must be registered as an "oracle" with the SortedOracles contract
      */

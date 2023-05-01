@@ -8,7 +8,7 @@ import { formatEther } from "ethers/lib/utils";
 const MIN_TOKENBALANCE = 50;
 
 const reportShortfall = (balance: number, tokenName: string): void => {
-  const message = `The Relayer balance of ${tokenName}, ${balance}, has fallen below the minimum value of ${MIN_TOKENBALANCE}`;
+  const message = `Relayer token balances: ${tokenName} (${balance}) has fallen below the minimum value of ${MIN_TOKENBALANCE}`;
   // eslint-disable-next-line no-console
   console.warn(message);
   sendNotification("Insufficient funds for Kolektivo Service", message);

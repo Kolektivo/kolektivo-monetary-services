@@ -10,7 +10,7 @@ export const executeCusdService = async (
   coinGeckoApiKey: string,
   signer: DefenderRelaySigner,
 ): Promise<number | undefined> => {
-  logMessage(serviceName, "executing the cUsdService");
+  logMessage(serviceName, "executing...");
 
   let cusdPrice!: number;
 

@@ -32,7 +32,7 @@ let sharedAbis: ISharedContractInfos;
 export const fetchAbis = (): void => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!abis) {
-    logMessage("abi-service", "fetching abis");
+    logMessage("Abi Helper", "fetching abis");
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     // TODO restore this when ready for production: abis = require(`./abis/${RUNNING_LOCALLY ? "celo-test.json" : "celo.json"}`);
     abis = require("../abis/celo-test.json");
