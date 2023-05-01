@@ -39,8 +39,8 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   fetchAbis();
 
   const relayer = new Relayer(event);
-  const info: RelayerModel = await relayer.getRelayer();
-  logMessage(serviceName, `Relayer address is ${info.address}`);
+  const relayerInfo: RelayerModel = await relayer.getRelayer();
+  logMessage(serviceName, `Relayer address is ${relayerInfo.address}`);
 
   const provider = new DefenderRelayProvider(event);
   const signer = new DefenderRelaySigner(event, provider, { speed: "fast" });
@@ -79,7 +79,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   await Promise.all([
     executeKCurService(kCurPrice, signer),
     executeMentoOracleService(kCurPrice, signer),
-    executeMentoService(kCurPrice, signer),
+    executeMentoService(kCurPrice, relayerInfo.address, signer),
     executeFloorAndCeilingService(kCurPrice, signer),
   ]);
 
