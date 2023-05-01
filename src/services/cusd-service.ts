@@ -23,8 +23,6 @@ export const executeCusdService = async (
 
   try {
     // confirm here: https://www.coingecko.com/en/coins/celo-dollar
-    logMessage(serviceName, "cUSD price: ", cusdPrice);
-
     const reserveContract = getReserveContract(signer);
 
     logMessage(serviceName, "Reserve address: ", reserveContract.address);
@@ -32,11 +30,11 @@ export const executeCusdService = async (
     const cUsdOracleContract = await getOracleForToken(reserveContract, "cUSD", signer);
 
     logMessage(serviceName, "cUSD Oracle address: ", cUsdOracleContract.address);
-    logMessage(serviceName, "Updating cUSD oracle");
+    logMessage(serviceName, `Reporting ${cusdPrice} to cUSD Oracle`);
 
     const txcUsd = await updateOracle(cUsdOracleContract, cusdPrice);
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    logMessage(serviceName, `Updated cUSD oracle tx hash: ${txcUsd.hash}`);
+    logMessage(serviceName, `Updated cUSD Oracle, tx hash: ${txcUsd.hash}`);
     // const mined = await tx.wait();
   } catch (ex) {
     serviceThrewException(serviceName, ex);

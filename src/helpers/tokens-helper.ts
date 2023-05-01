@@ -18,16 +18,15 @@ export const confirmTokenBalances = async (signer: DefenderRelaySigner): Promise
   const reserveContractAddress = getContractAddress("Reserve");
   const kCurContract = getContract("CuracaoReserveToken", signer);
 
-  const balance = Number.parseFloat(formatEther(await kCurContract.balanceOf(reserveContractAddress)));
+  let balance = Number.parseFloat(formatEther(await kCurContract.balanceOf(reserveContractAddress)));
 
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "kCUR");
   }
 
-  // TODO: pull this in when the token is available
-  //const kGuilderContract = getContract("KolektivoGuilder");
-  // balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(reserveContractAddress)));
-  // if (balance < MIN_TOKENBALANCE) {
-  //   reportShortfall(balance, "kGuilder");
-  // }
+  const kGuilderContract = getContract("KolektivoGuilder", signer);
+  balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(reserveContractAddress)));
+  if (balance < MIN_TOKENBALANCE) {
+    reportShortfall(balance, "KolektivoGuilder");
+  }
 };

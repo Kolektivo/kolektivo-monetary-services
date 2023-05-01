@@ -1,7 +1,6 @@
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
-import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 
 const serviceName = "Mento Service";

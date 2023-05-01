@@ -70,11 +70,11 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
     const kCurOracleContract = await getOracleForToken(reserveContract, "CuracaoReserveToken", signer);
 
     logMessage(serviceName, "kCUR Oracle address: ", kCurOracleContract.address);
-    logMessage(serviceName, "Updating kCUR oracle");
+    logMessage(serviceName, `Reporting ${kcurPrice} to kCUR Oracle`);
 
     const tx = await updateOracle(kCurOracleContract, kcurPrice);
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    logMessage(serviceName, `Updated kCUR oracle tx hash: ${tx.hash}`);
+    logMessage(serviceName, `Updated kCUR Oracle, tx hash: ${tx.hash}`);
     // const mined = await tx.wait();
   } catch (ex) {
     serviceThrewException(serviceName, ex);
