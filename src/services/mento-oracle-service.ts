@@ -1,8 +1,10 @@
 import { KGUILDER_USDPRICE } from "../globals";
-import { getContractAbi } from "../helpers/abi-helper";
+import { getContractAddress } from "../helpers/abi-helper";
+import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
+import { parseUnits } from "ethers/lib/utils";
 
 const serviceName = "Mento-Oracle Service";
 
@@ -14,7 +16,16 @@ export const executeMentoOracleService = async (kCurPrice: number, signer: Defen
       throw new Error("kCUR price is too small");
     }
     const kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
-    const mentoOracleContract = getContractAbi("SortedOracles");
+    const kGTokenContractAddress = getContractAddress("KGuilder");
+
+    const mentoOracleContract = getContract("SortedOracles", signer);
+
+    mentoOracleContract.report(
+      kGTokenContractAddress,
+      parseUnits(kGkCurExchangeRate.toString(), 24),
+      undefined,
+      undefined,
+    );
   } catch (ex) {
     serviceThrewException(serviceName, ex);
     return undefined;

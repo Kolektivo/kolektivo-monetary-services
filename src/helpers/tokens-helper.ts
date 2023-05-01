@@ -27,7 +27,7 @@ export const confirmTokenBalances = async (signer: DefenderRelaySigner): Promise
   // TODO: pull this in when the token is available
   //const kGuilderContract = getContract("KolektivoGuilder");
   // balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(reserveContractAddress)));
-  if (balance < MIN_TOKENBALANCE) {
-    reportShortfall(balance, "kGuilder");
-  }
+  // if (balance < MIN_TOKENBALANCE) {
+  //   reportShortfall(balance, "kGuilder");
+  // }
 };
