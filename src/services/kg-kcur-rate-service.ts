@@ -6,7 +6,7 @@ import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { parseUnits } from "ethers/lib/utils";
 
-const serviceName = "Mento-Oracle Service";
+const serviceName = "kG-kCur Rate Service";
 
 export const executeMentoOracleService = async (kCurPrice: number, signer: DefenderRelaySigner): Promise<void> => {
   logMessage(serviceName, "executing...");

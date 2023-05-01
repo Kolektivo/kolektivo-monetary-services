@@ -10,8 +10,8 @@ import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
 import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./services/kcur-service";
+import { executeMentoOracleService } from "./services/kg-kcur-rate-service";
 import { executeMentoService } from "./services/mento-arbitrage-service";
-import { executeMentoOracleService } from "./services/mento-oracle-service";
 
 import { Relayer } from "defender-relay-client";
 import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-client/lib/ethers";
