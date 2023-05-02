@@ -30,12 +30,12 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
     const floor = reserveValue / kCurTotalSupply;
     logMessage(serviceName, `reserve floor: ${floor}`);
 
-    const ceilingMultiplier = Number.parseFloat(formatEther(await proxyContract.ceilingMultiplier()));
+    // const ceilingMultiplier = Number.parseFloat(formatEther(await proxyContract.ceilingMultiplier()));
 
     //price ceiling is defined in the BL as Price Floor * Ceiling Multiplier
     //TODO get ceiling multiplier from the proxy contract when we get it
-    const ceiling = floor * ceilingMultiplier;
-    logMessage(serviceName, `reserve ceiling: ${ceiling}`);
+    // const ceiling = floor * ceilingMultiplier;
+    // logMessage(serviceName, `reserve ceiling: ${ceiling}`);
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }
