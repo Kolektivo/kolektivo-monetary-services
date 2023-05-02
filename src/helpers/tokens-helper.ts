@@ -1,4 +1,3 @@
-import { getContractAddress } from "./abi-helper";
 import { getContract } from "./contracts-helper";
 import { sendNotification } from "./notifications-helper";
 
@@ -14,18 +13,17 @@ const reportShortfall = (balance: number, tokenName: string): void => {
   sendNotification("Insufficient funds for Kolektivo Service", message);
 };
 
-export const confirmTokenBalances = async (signer: DefenderRelaySigner): Promise<void> => {
-  const reserveContractAddress = getContractAddress("Reserve");
+export const confirmTokenBalances = async (relayerAddress: string, signer: DefenderRelaySigner): Promise<void> => {
   const kCurContract = getContract("CuracaoReserveToken", signer);
 
-  let balance = Number.parseFloat(formatEther(await kCurContract.balanceOf(reserveContractAddress)));
+  let balance = Number.parseFloat(formatEther(await kCurContract.balanceOf(relayerAddress)));
 
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "kCUR");
   }
 
   const kGuilderContract = getContract("KolektivoGuilder", signer);
-  balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(reserveContractAddress)));
+  balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(relayerAddress)));
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "KolektivoGuilder");
   }

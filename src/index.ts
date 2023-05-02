@@ -48,7 +48,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const coinGeckoApiKey = RUNNING_LOCALLY ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
 
-  await confirmTokenBalances(signer);
+  await confirmTokenBalances(relayerInfo.address, signer);
 
   /**
    * FYI we aren't awaiting transactions to be mined.  Why, aside from the fact that Celo is fast
