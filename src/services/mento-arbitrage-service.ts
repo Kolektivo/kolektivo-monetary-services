@@ -3,6 +3,7 @@ import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
+import { BigNumber } from "ethers/lib/ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
 const serviceName = "Mento Service";
@@ -45,14 +46,14 @@ const sendBuyOrSell = async (
     parseEther(amountLimit.toString()),
     gold,
   );
-  const { to, value, data } = txLike;
+  const { to, data } = txLike;
 
   // the other required params must be provided by the caller (eg the arbitrage service)
   const operation = 0; // corresponds to `call` and is always the case for our use cases
   const badgeId = MENTO_BADGE_ID;
 
   // call BAC
-  return bac.execTransactionFromModule(to, value, data, operation, badgeId);
+  return bac.execTransactionFromModule(to, BigNumber.from(0), data, operation, badgeId);
 };
 
 export const executeMentoService = async (
