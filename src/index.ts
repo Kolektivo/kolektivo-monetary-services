@@ -37,6 +37,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   /**
    * TODO: figure out how to avoid re-entrancy
    */
+  clearFailedStatus();
 
   initializeNotifications(context?.notificationClient);
 
