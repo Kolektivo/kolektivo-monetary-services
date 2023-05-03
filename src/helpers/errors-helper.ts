@@ -7,6 +7,10 @@ interface IError {
 
 export let failedStatus = false;
 
+export const clearFailedStatus = (): void => {
+  failedStatus = false;
+};
+
 /**
  * Reports the error, does not throw an exception
  *

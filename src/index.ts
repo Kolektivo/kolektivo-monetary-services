@@ -4,7 +4,7 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./helpers/abi-helper";
-import { failedStatus, logMessage, logWarning } from "./helpers/errors-helper";
+import { clearFailedStatus, failedStatus, logMessage, logWarning } from "./helpers/errors-helper";
 import { initializeNotifications, INotificationClient } from "./helpers/notifications-helper";
 import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
@@ -34,6 +34,10 @@ export interface IRunContext {
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function handler(event: IAutoRelayHandler, context?: IRunContext): Promise<string> {
+  /**
+   * TODO: figure out how to avoid re-entrancy
+   */
+
   initializeNotifications(context?.notificationClient);
 
   fetchAbis();
@@ -85,6 +89,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   ]);
 
   if (failedStatus) {
+    clearFailedStatus();
     throw new Error("One or more services failed");
   } else {
     return "Succeeded";
