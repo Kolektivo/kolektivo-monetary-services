@@ -99,7 +99,9 @@ const sendBuyOrSell = async (
 
   const cUsdContractAddress = getContractAddress("cUSD");
   const assets = buyingKCur ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
-
+  /**
+   * make the purchase
+   */
   return proxyPoolContract.batchSwapExactIn(
     [batchSwapStep],
     assets,
@@ -140,7 +142,7 @@ export const executeFloorAndCeilingService = async (
       logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
       const delta = floor - kCurPrice + 0.001; // add just a little buffer
       /**
-       * sell cUSD for kCUR
+       * buy cUSD with kCUR
        */
       const tx: ITransaction = await sendBuyOrSell(
         signer,
@@ -150,12 +152,12 @@ export const executeFloorAndCeilingService = async (
         delta,
         false,
       );
-      logMessage(serviceName, `Sold ${delta} kCUR for cUSD, tx hash: ${tx.hash}`);
+      logMessage(serviceName, `Bought ${delta} cUSD with kCUR, tx hash: ${tx.hash}`);
     } else if (kCurPrice > ceiling) {
       logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling}`);
       const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
       /**
-       * buy cUSD for kCUR
+       * buy kCUR with cUSD
        */
       const tx: ITransaction = await sendBuyOrSell(
         signer,
@@ -165,7 +167,7 @@ export const executeFloorAndCeilingService = async (
         delta,
         true,
       );
-      logMessage(serviceName, `Bought ${delta} kCUR for cUSD, tx hash: ${tx.hash}`);
+      logMessage(serviceName, `Bought ${delta} kCUR with cUSD, tx hash: ${tx.hash}`);
     }
   } catch (ex) {
     serviceThrewException(serviceName, ex);
