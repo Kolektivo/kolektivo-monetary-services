@@ -26,12 +26,6 @@ interface IBatchSwapStep {
 
 /**
  * execute a buy or sell between cUSD and kCUR
- * @param buyingKCur
- * @param amount
- * @param kCurContract
- * @param cUsdContract
- * @param relayerAddress
- * @param signer
  */
 const sendBuyOrSell = async (
   signer: DefenderRelaySigner,
@@ -139,13 +133,16 @@ export const executeFloorAndCeilingService = async (
     const ceiling = floor * ceilingMultiplier;
     logMessage(serviceName, `reserve ceiling: ${ceiling}`);
 
+    // const reserveToken = await proxyPoolContract.reserveToken();
+    // const pairToken = await proxyPoolContract.pairToken();
+
     if (kCurPrice < floor) {
       logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
       const delta = floor - kCurPrice + 0.001; // add just a little buffer
       /**
        * tell kCUR token to allow the proxy contract to spend kCUR on behalf of the Relayer
        */
-      await createAllowance(signer, kCurContract, delta, relayerAddress, proxyPoolContract.address);
+      await createAllowance(signer, kCurContract, "kCUR", delta, relayerAddress, proxyPoolContract.address);
       /**
        * buy cUSD with kCUR
        */
@@ -165,7 +162,7 @@ export const executeFloorAndCeilingService = async (
       /**
        * tell kCUR token to allow the proxy contract to spend cUSD on behalf of the Relayer
        */
-      await createAllowance(signer, cUsdContract, delta, relayerAddress, proxyPoolContract.address);
+      await createAllowance(signer, cUsdContract, "cUSD", delta, relayerAddress, proxyPoolContract.address);
       /**
        * buy kCUR with cUSD
        */

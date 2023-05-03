@@ -1,4 +1,7 @@
+import { ITransaction } from "../globals";
+
 import { getContract } from "./contracts-helper";
+import { logMessage } from "./errors-helper";
 import { sendNotification } from "./notifications-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
@@ -37,13 +40,24 @@ export const createAllowance = async (
   signer: DefenderRelaySigner,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tokenContract: any,
+  tokenContractName: string,
   maxPayAmount: number,
   owner: string,
   spender: string,
 ): Promise<void> => {
+  const ownerBalance = Number.parseFloat(formatEther(await tokenContract.balanceOf(owner)));
+
+  if (ownerBalance < maxPayAmount) {
+    throw new Error("owner is lacking the sufficient funds to pay ${maxPayAmount} of ${tokenContractName}");
+  }
+
+  let tx: ITransaction | undefined;
   const currentAllowance = Number.parseFloat(formatEther(await tokenContract.allowance(owner, spender)));
   if (currentAllowance < maxPayAmount) {
-    await tokenContract.connect(signer).approve(spender, parseEther(maxPayAmount.toString()));
+    tx = await tokenContract.connect(signer).approve(spender, parseEther(maxPayAmount.toString()));
   }
-  // logMessage("Create token allowance", `Approved max purchase of ${maxPayAmount}: ${tx?.hash ?? "no tx needed"}`);
+  logMessage(
+    "Create token allowance",
+    `Approved max purchase of ${maxPayAmount} of ${tokenContractName}, tx hash: ${tx?.hash ?? "no tx needed"}`,
+  );
 };
