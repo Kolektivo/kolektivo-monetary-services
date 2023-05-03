@@ -26,7 +26,7 @@ interface IBatchSwapStep {
 
 /**
  * execute a buy or sell between cUSD and kCUR
- * @param buy
+ * @param buyingKCur
  * @param amount
  * @param kCurContract
  * @param cUsdContract
@@ -40,7 +40,11 @@ const sendBuyOrSell = async (
   proxyPoolContract: any,
   kCurContractAddress: string,
   amount: number,
-  buy: boolean,
+  /**
+   * if true then we're buying kCUR with cUSD
+   * if false then we're buying cUSD with kCUR
+   */
+  buyingKCur: boolean,
 ): Promise<ITransaction> => {
   /**
    * docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L910
@@ -58,11 +62,26 @@ const sendBuyOrSell = async (
    * docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L881
    */
   const batchSwapStep: IBatchSwapStep = {
+    /**
+     * kCUR pool id
+     */
     poolId,
-    assetInIndex: 0, // index of token In address in assets array (see assets below)
-    assetOutIndex: 1, // index of token Out address in assets array (see assets below)
+    /**
+     * index of token In address in assets array (see assets below)
+     */
+    assetInIndex: 0,
+    /**
+     * index of token Out address in assets array (see assets below)
+     */
+    assetOutIndex: 1,
+    /**
+     * what we are paying.
+     */
     amount: parseEther(amount.toString()),
-    userData: "", // always empty string
+    /**
+     * always empty string
+     */
+    userData: "",
   };
   /**
    * empty array to set limits
@@ -76,7 +95,7 @@ const sendBuyOrSell = async (
   const deadline: number = 60 * 60; // for us we can set it to one hour | used previously in Prime Launch
 
   const cUsdContractAddress = getContractAddress("cUSD");
-  const assets = buy ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
+  const assets = buyingKCur ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
 
   return proxyPoolContract.batchSwapExactIn(
     [batchSwapStep],
@@ -148,5 +167,4 @@ export const executeFloorAndCeilingService = async (
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }
-  return await Promise.resolve();
 };
