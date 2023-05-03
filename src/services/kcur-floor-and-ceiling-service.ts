@@ -1,7 +1,7 @@
 import { ITransaction } from "../globals";
-import { getContractAddress } from "../helpers/abi-helper";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
+import { createAllowance } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber } from "ethers";
@@ -39,6 +39,7 @@ const sendBuyOrSell = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxyPoolContract: any,
   kCurContractAddress: string,
+  cUsdContractAddress: string,
   /**
    * amount we're paying in
    */
@@ -97,7 +98,6 @@ const sendBuyOrSell = async (
    */
   const deadline: number = 60 * 60; // for us we can set it to one hour | used previously in Prime Launch
 
-  const cUsdContractAddress = getContractAddress("cUSD");
   const assets = buyingKCur ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
   /**
    * make the purchase
@@ -123,6 +123,7 @@ export const executeFloorAndCeilingService = async (
   try {
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("CuracaoReserveToken", signer);
+    const cUsdContract = getContract("cUSD", signer);
     const proxyPoolContract = getContract("ProxyPool", signer);
     const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
     const kCurTotalSupply = Number.parseFloat(formatEther(await kCurContract.totalSupply()));
@@ -142,6 +143,10 @@ export const executeFloorAndCeilingService = async (
       logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
       const delta = floor - kCurPrice + 0.001; // add just a little buffer
       /**
+       * tell kCUR token to allow the proxy contract to spend kCUR on behalf of the Relayer
+       */
+      await createAllowance(signer, kCurContract, delta, relayerAddress, proxyPoolContract.address);
+      /**
        * buy cUSD with kCUR
        */
       const tx: ITransaction = await sendBuyOrSell(
@@ -149,6 +154,7 @@ export const executeFloorAndCeilingService = async (
         relayerAddress,
         proxyPoolContract,
         kCurContract.address,
+        cUsdContract.address,
         delta,
         false,
       );
@@ -157,6 +163,10 @@ export const executeFloorAndCeilingService = async (
       logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling}`);
       const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
       /**
+       * tell kCUR token to allow the proxy contract to spend cUSD on behalf of the Relayer
+       */
+      await createAllowance(signer, cUsdContract, delta, relayerAddress, proxyPoolContract.address);
+      /**
        * buy kCUR with cUSD
        */
       const tx: ITransaction = await sendBuyOrSell(
@@ -164,6 +174,7 @@ export const executeFloorAndCeilingService = async (
         relayerAddress,
         proxyPoolContract,
         kCurContract.address,
+        cUsdContract.address,
         delta,
         true,
       );

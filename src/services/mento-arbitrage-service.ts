@@ -2,10 +2,11 @@ import { ITransaction } from "../globals";
 import { getContractAddress } from "../helpers/abi-helper";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
+import { createAllowance } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber } from "ethers/lib/ethers";
-import { formatEther, parseEther } from "ethers/lib/utils";
+import { parseEther } from "ethers/lib/utils";
 
 const serviceName = "Mento Service";
 const MENTO_BADGE_ID = 420421;
@@ -87,16 +88,9 @@ export const executeMentoService = async (
      */
     const mentoExchangeAddress = getContractAddress("Exchange");
     /**
-     * tell kCUR token to allow the MentoExchange (spender) to spend kCUR on behalf of the Relayer (owner)
+     * tell kCUR token to allow the MentoExchange to spend kCUR on behalf of the Relayer
      */
-    const currentAllowance = Number.parseFloat(
-      formatEther(await kCurContract.allowance(relayerAddress, mentoExchangeAddress)),
-    );
-    if (currentAllowance < maxPayAmount) {
-      const tx = await kCurContract.connect(signer).approve(mentoExchangeAddress, parseEther(maxPayAmount.toString()));
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-      logMessage(serviceName, `Approved max purchase of ${maxPayAmount}: ${tx.hash}`);
-    }
+    await createAllowance(signer, kCurContract, maxPayAmount, relayerAddress, mentoExchangeAddress);
 
     const tx = await sendBuyOrSell(signer, relayerAddress, receiveAmount, maxPayAmount, false, true);
 
