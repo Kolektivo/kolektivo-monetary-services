@@ -52,12 +52,12 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
 
     logMessage(serviceName, `kCUR spot price: ${spotExchangeRate}`);
 
-    const random = (min: number, max: number): number => Math.floor(Math.random() * (max - min)) + min;
-    const fake = 0.54 + random(0, 100) / 5000;
-    logMessage(serviceName, `fake kCUR spot price: ${fake}`);
+    // const random = (min: number, max: number): number => Math.floor(Math.random() * (max - min)) + min;
+    // const fake = 0.54 + random(0, 100) / 5000;
+    // logMessage(serviceName, `fake kCUR spot price: ${fake}`);
 
     // TODO: restore this when possible
-    return fake; // spotExchangeRate;
+    return spotExchangeRate;
   } catch (ex) {
     serviceThrewException("getKCurPrice", ex);
     return undefined;

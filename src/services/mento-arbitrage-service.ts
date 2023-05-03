@@ -7,7 +7,7 @@ import { BigNumber } from "ethers/lib/ethers";
 import { formatEther, parseEther } from "ethers/lib/utils";
 
 const serviceName = "Mento Service";
-const MENTO_BADGE_ID = 42042;
+const MENTO_BADGE_ID = 420421;
 
 /**
  * how to use the badger to gain access to the mentoservice:

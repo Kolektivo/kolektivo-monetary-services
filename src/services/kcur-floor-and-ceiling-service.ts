@@ -2,7 +2,6 @@ import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { Contract } from "ethers/lib/ethers";
 import { formatEther } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
@@ -18,7 +17,7 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
      */
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("CuracaoReserveToken", signer);
-    const proxyContract = {} as Contract; // getContract("proxy", signer);
+    const proxyPoolContract = getContract("ProxyPool", signer);
 
     //price floor is defined in the BL as Reserve Value / kCUR Supply
     const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
@@ -30,12 +29,11 @@ export const executeFloorAndCeilingService = async (kCurPrice: number, signer: D
     const floor = reserveValue / kCurTotalSupply;
     logMessage(serviceName, `reserve floor: ${floor}`);
 
-    // const ceilingMultiplier = Number.parseFloat(formatEther(await proxyContract.ceilingMultiplier()));
+    const ceilingMultiplier = Number.parseFloat(formatEther(await proxyPoolContract.ceilingMultiplier()));
 
     //price ceiling is defined in the BL as Price Floor * Ceiling Multiplier
-    //TODO get ceiling multiplier from the proxy contract when we get it
-    // const ceiling = floor * ceilingMultiplier;
-    // logMessage(serviceName, `reserve ceiling: ${ceiling}`);
+    const ceiling = floor * ceilingMultiplier;
+    logMessage(serviceName, `reserve ceiling: ${ceiling}`);
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }
