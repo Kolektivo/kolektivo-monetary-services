@@ -52,6 +52,7 @@ export const createAllowance = async (
   maxPayAmount: number,
   owner: string,
   spender: string,
+  serviceName: string,
 ): Promise<void> => {
   const ownerBalance = Number.parseFloat(formatEther(await tokenContract.balanceOf(owner)));
 
@@ -65,7 +66,7 @@ export const createAllowance = async (
     tx = await tokenContract.connect(signer).approve(spender, parseEther(maxPayAmount.toString()));
   }
   logMessage(
-    "Create token allowance",
+    serviceName,
     `Approved max purchase of ${maxPayAmount} of ${tokenContractName}, tx hash: ${tx?.hash ?? "no tx needed"}`,
   );
 };

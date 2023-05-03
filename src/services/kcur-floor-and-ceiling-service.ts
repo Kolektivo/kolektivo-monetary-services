@@ -142,7 +142,15 @@ export const executeFloorAndCeilingService = async (
       /**
        * tell kCUR token to allow the proxy contract to spend kCUR on behalf of the Relayer
        */
-      await createAllowance(signer, kCurContract, "kCUR", delta, relayerAddress, proxyPoolContract.address);
+      await createAllowance(
+        signer,
+        kCurContract,
+        "kCUR",
+        delta,
+        relayerAddress,
+        proxyPoolContract.address,
+        serviceName,
+      );
       /**
        * buy cUSD with kCUR
        */
@@ -162,7 +170,15 @@ export const executeFloorAndCeilingService = async (
       /**
        * tell kCUR token to allow the proxy contract to spend cUSD on behalf of the Relayer
        */
-      await createAllowance(signer, cUsdContract, "cUSD", delta, relayerAddress, proxyPoolContract.address);
+      await createAllowance(
+        signer,
+        cUsdContract,
+        "cUSD",
+        delta,
+        relayerAddress,
+        proxyPoolContract.address,
+        serviceName,
+      );
       /**
        * buy kCUR with cUSD
        */

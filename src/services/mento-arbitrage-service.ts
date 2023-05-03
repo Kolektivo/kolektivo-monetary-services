@@ -90,7 +90,15 @@ export const executeMentoService = async (
     /**
      * tell kCUR token to allow the MentoExchange to spend kCUR on behalf of the Relayer
      */
-    await createAllowance(signer, kCurContract, "kCUR", maxPayAmount, relayerAddress, mentoExchangeAddress);
+    await createAllowance(
+      signer,
+      kCurContract,
+      "kCUR",
+      maxPayAmount,
+      relayerAddress,
+      mentoExchangeAddress,
+      serviceName,
+    );
 
     const tx = await sendBuyOrSell(signer, relayerAddress, receiveAmount, maxPayAmount, false, true);
 
