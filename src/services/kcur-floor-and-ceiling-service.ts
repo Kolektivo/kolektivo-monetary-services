@@ -33,13 +33,11 @@ interface IBatchSwapStep {
  * @param relayerAddress
  * @param signer
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sendBuyOrSell = async (
   signer: DefenderRelaySigner,
   relayerAddress: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxyPoolContract: any,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   kCurContractAddress: string,
   amount: number,
   buy: boolean,
@@ -99,16 +97,9 @@ export const executeFloorAndCeilingService = async (
   logMessage(serviceName, "executing...");
 
   try {
-    /**
-     * 1.79 Guilder is hardcoded to 1 $USD
-     * one kG meant to be pegged to 1 Guilder, one-to-one
-     * balance of kCUR in Mento Reserve is meant to be fixed to the totalSupply of kGuilder
-     */
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("CuracaoReserveToken", signer);
     const proxyPoolContract = getContract("ProxyPool", signer);
-
-    //price floor is defined in the BL as Reserve Value / kCUR Supply
     const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
     const kCurTotalSupply = Number.parseFloat(formatEther(await kCurContract.totalSupply()));
 
@@ -120,13 +111,12 @@ export const executeFloorAndCeilingService = async (
 
     const ceilingMultiplier = Number.parseFloat(formatEther(await proxyPoolContract.ceilingMultiplier()));
 
-    //price ceiling is defined in the BL as Price Floor * Ceiling Multiplier
     const ceiling = floor * ceilingMultiplier;
     logMessage(serviceName, `reserve ceiling: ${ceiling}`);
 
     if (kCurPrice < floor) {
       logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
-      const delta = floor - kCurPrice + 0.001; // just a little buffer
+      const delta = floor - kCurPrice + 0.001; // add just a little buffer
       /**
        * sell cUSD for kCUR
        */
@@ -141,7 +131,7 @@ export const executeFloorAndCeilingService = async (
       logMessage(serviceName, `Sold ${delta} kCUR for cUSD, tx hash: ${tx.hash}`);
     } else if (kCurPrice > ceiling) {
       logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling}`);
-      const delta = kCurPrice - ceiling + 0.001; // just a little buffer
+      const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
       /**
        * buy cUSD for kCUR
        */

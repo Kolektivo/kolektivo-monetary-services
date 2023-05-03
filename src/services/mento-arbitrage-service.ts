@@ -69,7 +69,6 @@ export const executeMentoService = async (
     if (!kGkCurExchangeRate) {
       throw new Error(`Cannot proceed, kCUR/kG exchange rate is undefined or zero`);
     }
-
     // const kGuilderPrice = KGUILDER_USDPRICE;
     // const kCurKGuilderRatio = 0;
     // const kGuilderPool = getContract("kGuilder Pool", signer); // getContract("kGuilderPool", signer);
@@ -84,7 +83,7 @@ export const executeMentoService = async (
     // max kG to receive in return
     const maxPayAmount = 0.00001;
     /**
-     * aprove withdrawal from the spend account
+     * approve withdrawal from the spend account
      */
     const mentoExchangeAddress = getContractAddress("Exchange");
     /**
