@@ -44,36 +44,37 @@ const sendBuyOrSell = async (
   amount: number,
   buy: boolean,
 ): Promise<ITransaction> => {
-  const kCurPool = getContract("kCur Pool", signer);
-  const poolId: BytesLike = await kCurPool.getPoolId();
-
-  const interactionAddress = relayerAddress; // this can be any wallet address that will sell or buy
-
-  // data of how fund management
-  // docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L910
+  /**
+   * docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L910
+   */
   const funds: IFundManagement = {
-    sender: interactionAddress,
+    sender: relayerAddress,
     fromInternalBalance: false, // always false
-    recipient: interactionAddress,
+    recipient: relayerAddress,
     toInternalBalance: false, // always false
   };
 
-  // data of what swap to perform
-  // docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L881
+  const kCurPool = getContract("kCur Pool", signer);
+  const poolId: BytesLike = await kCurPool.getPoolId();
+  /**
+   * docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L881
+   */
   const batchSwapStep: IBatchSwapStep = {
     poolId,
-    assetInIndex: 0, // index of token In address in assets array
-    assetOutIndex: 1, // index of token Out address in assets array
-    amount: parseEther(amount.toString()), // if using batchSwapExactIn:
+    assetInIndex: 0, // index of token In address in assets array (see assets below)
+    assetOutIndex: 1, // index of token Out address in assets array (see assets below)
+    amount: parseEther(amount.toString()),
     userData: "", // always empty string
   };
-
-  // empty array to set limits
-  // limit says how many tokens can Vault use on behalf of user
-  // for us, it will be always empty array
+  /**
+   * empty array to set limits
+   * limit says how many tokens can Vault use on behalf of user
+   * for us, it will be always empty array
+   */
   const limits: Array<number> = [];
-
-  // deadline is by what time the swap should be executed
+  /**
+   * deadline is by what time the swap should be executed
+   */
   const deadline: number = 60 * 60; // for us we can set it to one hour | used previously in Prime Launch
 
   const cUsdContractAddress = getContractAddress("cUSD");
