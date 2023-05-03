@@ -39,6 +39,9 @@ const sendBuyOrSell = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxyPoolContract: any,
   kCurContractAddress: string,
+  /**
+   * amount we're paying in
+   */
   amount: number,
   /**
    * if true then we're buying kCUR with cUSD
