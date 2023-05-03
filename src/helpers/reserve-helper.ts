@@ -1,3 +1,5 @@
+import { ITransaction } from "../globals";
+
 import { getContractAbi, getContractAddress } from "./abi-helper";
 import { getContract } from "./contracts-helper";
 
@@ -5,10 +7,6 @@ import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { ethers } from "ethers";
 import { Contract } from "ethers/lib/ethers";
 import { parseEther } from "ethers/lib/utils";
-
-export interface ITransaction {
-  hash: string;
-}
 
 export const getReserveContract = (signer: DefenderRelaySigner): Contract => {
   return getContract("Reserve", signer);

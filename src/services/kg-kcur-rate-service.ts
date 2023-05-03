@@ -1,4 +1,4 @@
-import { KGUILDER_USDPRICE } from "../globals";
+import { ITransaction, KGUILDER_USDPRICE } from "../globals";
 import { getContractAddress } from "../helpers/abi-helper";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
@@ -36,13 +36,12 @@ export const executekGkCURService = async (
     /**
      * the Relayer must be registered as an "oracle" with the SortedOracles contract
      */
-    const tx = await mentoOracleContract.report(
+    const tx: ITransaction = await mentoOracleContract.report(
       kGTokenContractAddress,
       parseUnits(kGkCurExchangeRate.toString(), 24),
       constants.AddressZero,
       constants.AddressZero,
     );
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     logMessage(serviceName, `Updated Mento SortedOracles, tx hash: ${tx.hash}`);
     return kGkCurExchangeRate;
   } catch (ex) {

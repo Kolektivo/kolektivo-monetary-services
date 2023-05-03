@@ -1,3 +1,4 @@
+import { ITransaction } from "../globals";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";
@@ -76,8 +77,7 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
     logMessage(serviceName, "kCUR Oracle address: ", kCurOracleContract.address);
     logMessage(serviceName, `Reporting ${kcurPrice} to kCUR Oracle`);
 
-    const tx = await updateOracle(kCurOracleContract, kcurPrice);
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const tx: ITransaction = await updateOracle(kCurOracleContract, kcurPrice);
     logMessage(serviceName, `Updated kCUR Oracle, tx hash: ${tx.hash}`);
     // const mined = await tx.wait();
   } catch (ex) {

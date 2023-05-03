@@ -1,3 +1,4 @@
+import { ITransaction } from "../globals";
 import { getContractAddress } from "../helpers/abi-helper";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
@@ -34,7 +35,7 @@ const sendBuyOrSell = async (
    * false to sell
    */
   buy: boolean,
-): Promise<{ hash: string }> => {
+): Promise<ITransaction> => {
   const bac = getContract("BAC", signer);
 
   const mentoExchange = getContract("Exchange", signer);
@@ -100,7 +101,6 @@ export const executeMentoService = async (
 
     const tx = await sendBuyOrSell(signer, relayerAddress, receiveAmount, maxPayAmount, false, true);
 
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     logMessage(serviceName, `Attempted to buy ${receiveAmount} kG with max kCUR ${maxPayAmount}, tx hash: ${tx.hash}`);
   } catch (ex) {
     serviceThrewException(serviceName, ex);

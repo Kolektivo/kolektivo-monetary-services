@@ -1,3 +1,4 @@
+import { ITransaction } from "../globals";
 import { getTokenGeckoPrice } from "../helpers/coingecko-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";
@@ -32,8 +33,7 @@ export const executeCusdService = async (
     logMessage(serviceName, "cUSD Oracle address: ", cUsdOracleContract.address);
     logMessage(serviceName, `Reporting ${cusdPrice} to cUSD Oracle`);
 
-    const txcUsd = await updateOracle(cUsdOracleContract, cusdPrice);
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const txcUsd: ITransaction = await updateOracle(cUsdOracleContract, cusdPrice);
     logMessage(serviceName, `Updated cUSD Oracle, tx hash: ${txcUsd.hash}`);
     // const mined = await tx.wait();
     return cusdPrice;

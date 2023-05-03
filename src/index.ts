@@ -86,7 +86,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   await Promise.all([
     executeKCurService(kCurPrice, signer),
     executeMentoService(kCurPrice, relayerInfo.address, kGkCurExchangeRate, signer),
-    executeFloorAndCeilingService(kCurPrice, signer),
+    executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer),
   ]);
 
   if (failedStatus) {
