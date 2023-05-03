@@ -27,8 +27,16 @@ export const confirmTokenBalances = async (owner: string, signer: DefenderRelayS
 
   const kGuilderContract = getContract("KolektivoGuilder", signer);
   balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(owner)));
+
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "KolektivoGuilder");
+  }
+
+  const cUsdContract = getContract("cUSD", signer);
+  balance = Number.parseFloat(formatEther(await cUsdContract.balanceOf(owner)));
+
+  if (balance < MIN_TOKENBALANCE) {
+    reportShortfall(balance, "cUSD");
   }
 };
 
