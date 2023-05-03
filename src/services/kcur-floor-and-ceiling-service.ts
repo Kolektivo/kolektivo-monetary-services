@@ -128,7 +128,7 @@ export const executeFloorAndCeilingService = async (
     const floor = reserveValue / kCurTotalSupply;
     logMessage(serviceName, `reserve floor: ${floor}`);
 
-    const ceilingMultiplier = Number.parseFloat(formatEther(await proxyPoolContract.ceilingMultiplier()));
+    const ceilingMultiplier = Number.parseFloat(await proxyPoolContract.ceilingMultiplier()) / 10000;
 
     const ceiling = floor * ceilingMultiplier;
     logMessage(serviceName, `reserve ceiling: ${ceiling}`);
