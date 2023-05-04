@@ -83,11 +83,11 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
 
   const kGkCurExchangeRate = await executekGkCURService(kCurPrice, signer);
 
-  await Promise.all([
-    executeKCurService(kCurPrice, signer),
-    executeMentoService(kCurPrice, relayerInfo.address, kGkCurExchangeRate, signer),
-    executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer),
-  ]);
+  //await Promise.all([
+  await executeKCurService(kCurPrice, signer);
+  await executeMentoService(kCurPrice, relayerInfo.address, kGkCurExchangeRate, signer);
+  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
+  //]);
 
   if (failedStatus) {
     clearFailedStatus();

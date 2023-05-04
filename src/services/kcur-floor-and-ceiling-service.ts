@@ -100,10 +100,64 @@ const sendBuyOrSell = async (
     [batchSwapStep],
     assets,
     batchSwapStep.amount,
-    BigNumber.from(0),
+    BigNumber.from("10000000000000000"),
     funds,
     limits,
     deadline,
+  );
+};
+
+const doit = async (
+  isFloor: boolean,
+  delta: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  kCurContract: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cUsdContract: any,
+  relayerAddress: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  proxyPoolContract: any,
+  signer: DefenderRelaySigner,
+): Promise<ITransaction> => {
+  /**
+   * tell kCUR token to allow the Vault to spend kCUR on behalf of the Relayer
+   */
+  const vault = getContract("Vault", signer);
+  /**
+   * tell kCUR token to allow the proxy contract to spend kCUR on behalf of the Relayer
+   */
+  await Promise.all([
+    createAllowance(
+      signer,
+      kCurContract,
+      isFloor ? "kCUR" : "cUSD",
+      delta,
+      relayerAddress,
+      proxyPoolContract.address,
+      serviceName,
+    ),
+
+    // eslint-disable-next-line prettier/prettier
+    createAllowance(signer,
+      kCurContract,
+      isFloor ? "kCUR" : "cUSD",
+      delta,
+      relayerAddress,
+      vault.address,
+      serviceName),
+  ]);
+  /**
+   * isFloor: buy cUSD with kCUR
+   * else: buy kCUR with cUSD
+   */
+  return sendBuyOrSell(
+    signer,
+    relayerAddress,
+    proxyPoolContract,
+    kCurContract.address,
+    cUsdContract.address,
+    delta,
+    !isFloor,
   );
 };
 
@@ -139,70 +193,12 @@ export const executeFloorAndCeilingService = async (
     if (kCurPrice < floor) {
       logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
       const delta = floor - kCurPrice + 0.001; // add just a little buffer
-      /**
-       * tell kCUR token to allow the proxy contract to spend kCUR on behalf of the Relayer
-       */
-      await createAllowance(
-        signer,
-        kCurContract,
-        "kCUR",
-        delta,
-        relayerAddress,
-        proxyPoolContract.address,
-        serviceName,
-      );
-      /**
-       * tell kCUR token to allow the Vault to spend kCUR on behalf of the Relayer
-       */
-      const vault = getContract("Vault", signer);
-
-      await createAllowance(signer, kCurContract, "kCUR", delta, relayerAddress, vault.address, serviceName);
-      /**
-       * buy cUSD with kCUR
-       */
-      const tx: ITransaction = await sendBuyOrSell(
-        signer,
-        relayerAddress,
-        proxyPoolContract,
-        kCurContract.address,
-        cUsdContract.address,
-        delta,
-        false,
-      );
+      const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
       logMessage(serviceName, `Bought ${delta} cUSD with kCUR, tx hash: ${tx.hash}`);
     } else if (kCurPrice > ceiling) {
       logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling}`);
       const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
-      /**
-       * tell kCUR token to allow the proxy contract to spend cUSD on behalf of the Relayer
-       */
-      await createAllowance(
-        signer,
-        cUsdContract,
-        "cUSD",
-        delta,
-        relayerAddress,
-        proxyPoolContract.address,
-        serviceName,
-      );
-      /**
-       * tell kCUR token to allow the Vault to spend kCUR on behalf of the Relayer
-       */
-      const vault = getContract("Vault", signer);
-
-      await createAllowance(signer, cUsdContract, "cUSD", delta, relayerAddress, vault.address, serviceName);
-      /**
-       * buy kCUR with cUSD
-       */
-      const tx: ITransaction = await sendBuyOrSell(
-        signer,
-        relayerAddress,
-        proxyPoolContract,
-        kCurContract.address,
-        cUsdContract.address,
-        delta,
-        true,
-      );
+      const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
       logMessage(serviceName, `Bought ${delta} kCUR with cUSD, tx hash: ${tx.hash}`);
     }
   } catch (ex) {

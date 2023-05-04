@@ -50,18 +50,18 @@ export const createAllowance = async (
   tokenContract: any,
   tokenContractName: string,
   maxPayAmount: number,
-  owner: string,
+  relayerAddress: string, // always the owner
   spender: string,
   serviceName: string,
 ): Promise<void> => {
-  const ownerBalance = Number.parseFloat(formatEther(await tokenContract.balanceOf(owner)));
+  const relayerBalance = Number.parseFloat(formatEther(await tokenContract.balanceOf(relayerAddress)));
 
-  if (ownerBalance < maxPayAmount) {
-    throw new Error("owner is lacking the sufficient funds to pay ${maxPayAmount} of ${tokenContractName}");
+  if (relayerBalance < maxPayAmount) {
+    throw new Error("Relayer is lacking the sufficient funds to pay ${maxPayAmount} of ${tokenContractName}");
   }
 
   let tx: ITransaction | undefined;
-  const currentAllowance = Number.parseFloat(formatEther(await tokenContract.allowance(owner, spender)));
+  const currentAllowance = Number.parseFloat(formatEther(await tokenContract.allowance(relayerAddress, spender)));
   if (currentAllowance < maxPayAmount) {
     /**
      * The Relayer will always be the owner (msg.sender)
