@@ -24,7 +24,7 @@ export const executekGkCURService = async (
      * An exchange rate: how many kG needed to purchase one kCUR.
      * Value of kG is fixed to KGUILDER_USDPRICE.
      */
-    kGkCurExchangeRate = Math.ceil(1 / (KGUILDER_USDPRICE / kCurPrice));
+    kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
 
     const kGTokenContractAddress = getContractAddress("KolektivoGuilder");
     logMessage(serviceName, "kGuilder address: ", kGTokenContractAddress);
