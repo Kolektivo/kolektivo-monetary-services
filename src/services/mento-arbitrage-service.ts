@@ -1,6 +1,6 @@
-import { ITransaction } from "../globals";
+import { ITransaction, KGUILDER_USDPRICE } from "../globals";
 import { getContractAddress } from "../helpers/abi-helper";
-import { getContract } from "../helpers/contracts-helper";
+import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance } from "../helpers/tokens-helper";
 
@@ -61,20 +61,27 @@ const sendBuyOrSell = async (
 export const executeMentoService = async (
   kCurPrice: number,
   relayerAddress: string,
-  kGkCurExchangeRate: number | undefined,
   signer: DefenderRelaySigner,
 ): Promise<void> => {
   logMessage(serviceName, "executing...");
 
   try {
-    if (!kGkCurExchangeRate) {
-      throw new Error(`Cannot proceed, kCUR/kG exchange rate is undefined or zero`);
-    }
+    const kCurContract = getContract("CuracaoReserveToken", signer);
+    const kGContract = getContract("KolektivoGuilder", signer);
+    const mentoReserveContract = getContract("MentoReserve", signer);
+    /**
+     * TODO: is safe to assume the results will not overflow Number?
+     */
+    const kCurTotalValueMento =
+      fromWeiToNumber(await kCurContract.balanceOf(mentoReserveContract.address), 18) * kCurPrice;
+
+    // eslint-disable-next-line prettier/prettier
+    const kGTotalValueStablePool =
+      fromWeiToNumber(await kGContract.totalSupply(), 18) * KGUILDER_USDPRICE; // fixed price of kG
+
     // const kGuilderPrice = KGUILDER_USDPRICE;
     // const kCurKGuilderRatio = 0;
     // const kGuilderPool = getContract("kGuilder Pool", signer); // getContract("kGuilderPool", signer);
-    const kCurContract = getContract("CuracaoReserveToken", signer);
-    // const kGContract = getContract("KolektivoGuilder", signer);
 
     /**
      * fake buying kG

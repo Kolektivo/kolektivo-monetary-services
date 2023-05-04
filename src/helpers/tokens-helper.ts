@@ -1,11 +1,11 @@
 import { ITransaction } from "../globals";
 
-import { getContract } from "./contracts-helper";
+import { fromWeiToNumber, getContract } from "./contracts-helper";
 import { logMessage } from "./errors-helper";
 import { sendNotification } from "./notifications-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
-import { formatEther, parseEther } from "ethers/lib/utils";
+import { parseEther } from "ethers/lib/utils";
 
 const MIN_TOKENBALANCE = 50;
 
@@ -19,21 +19,21 @@ const reportShortfall = (balance: number, tokenName: string): void => {
 export const confirmTokenBalances = async (owner: string, signer: DefenderRelaySigner): Promise<void> => {
   const kCurContract = getContract("CuracaoReserveToken", signer);
 
-  let balance = Number.parseFloat(formatEther(await kCurContract.balanceOf(owner)));
+  let balance = fromWeiToNumber(await kCurContract.balanceOf(owner), 18);
 
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "kCUR");
   }
 
   const kGuilderContract = getContract("KolektivoGuilder", signer);
-  balance = Number.parseFloat(formatEther(await kGuilderContract.balanceOf(owner)));
+  balance = fromWeiToNumber(await kGuilderContract.balanceOf(owner), 18);
 
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "KolektivoGuilder");
   }
 
   const cUsdContract = getContract("cUSD", signer);
-  balance = Number.parseFloat(formatEther(await cUsdContract.balanceOf(owner)));
+  balance = fromWeiToNumber(await cUsdContract.balanceOf(owner), 18);
 
   if (balance < MIN_TOKENBALANCE) {
     reportShortfall(balance, "cUSD");
@@ -54,14 +54,14 @@ export const createAllowance = async (
   spender: string,
   serviceName: string,
 ): Promise<void> => {
-  const relayerBalance = Number.parseFloat(formatEther(await tokenContract.balanceOf(relayerAddress)));
+  const relayerBalance = fromWeiToNumber(await tokenContract.balanceOf(relayerAddress), 18);
 
   if (relayerBalance < maxPayAmount) {
     throw new Error("Relayer is lacking the sufficient funds to pay ${maxPayAmount} of ${tokenContractName}");
   }
 
   let tx: ITransaction | undefined;
-  const currentAllowance = Number.parseFloat(formatEther(await tokenContract.allowance(relayerAddress, spender)));
+  const currentAllowance = fromWeiToNumber(await tokenContract.allowance(relayerAddress, spender), 18);
   if (currentAllowance < maxPayAmount) {
     /**
      * The Relayer will always be the owner (msg.sender)

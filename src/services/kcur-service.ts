@@ -1,11 +1,10 @@
 import { ITransaction } from "../globals";
-import { getContract } from "../helpers/contracts-helper";
+import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber, BytesLike } from "ethers/lib/ethers";
-import { formatEther } from "ethers/lib/utils";
 
 /**
  * this is a made up struct just for explaining what is returned from Vault
@@ -37,10 +36,10 @@ export const getKCurPrice = async (cUsdPrice: number, signer: DefenderRelaySigne
     const poolId: BytesLike = await kCurPool.getPoolId();
     const poolInfo: IPoolTokensStruct = await vault.getPoolTokens(poolId);
 
-    const Bi = Number.parseFloat(formatEther(poolInfo.balances[cUsdIndex])); // cUsdBalance
-    const Bo = Number.parseFloat(formatEther(poolInfo.balances[kCurIndex])); // kCurBalance
-    const Wi = Number.parseFloat(formatEther(weights[cUsdIndex])); // cUsdWeight
-    const Wo = Number.parseFloat(formatEther(weights[kCurIndex])); // kCurWeight
+    const Bi = fromWeiToNumber(poolInfo.balances[cUsdIndex], 18); // cUsdBalance
+    const Bo = fromWeiToNumber(poolInfo.balances[kCurIndex], 18); // kCurBalance
+    const Wi = fromWeiToNumber(weights[cUsdIndex], 18); // cUsdWeight
+    const Wo = fromWeiToNumber(weights[kCurIndex], 18); // kCurWeight
 
     /**
      * see here: https://docs.balancer.fi/reference/math/weighted-math.html#spot-price

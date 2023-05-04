@@ -1,11 +1,11 @@
 import { ITransaction } from "../globals";
-import { getContract } from "../helpers/contracts-helper";
+import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber } from "ethers";
-import { BytesLike, formatEther, parseEther } from "ethers/lib/utils";
+import { BytesLike, parseEther } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
 
@@ -173,8 +173,8 @@ export const executeFloorAndCeilingService = async (
     const kCurContract = getContract("CuracaoReserveToken", signer);
     const cUsdContract = getContract("cUSD", signer);
     const proxyPoolContract = getContract("ProxyPool", signer);
-    const reserveValue = Number.parseFloat(formatEther((await reserveContract.reserveStatus())[0]));
-    const kCurTotalSupply = Number.parseFloat(formatEther(await kCurContract.totalSupply()));
+    const reserveValue = fromWeiToNumber((await reserveContract.reserveStatus())[0], 18);
+    const kCurTotalSupply = fromWeiToNumber(await kCurContract.totalSupply(), 18);
 
     if (!kCurTotalSupply) {
       throw new Error("kCur totalSupply is zero");

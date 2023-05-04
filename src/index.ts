@@ -8,7 +8,6 @@ import { clearFailedStatus, failedStatus, logMessage, logWarning } from "./helpe
 import { initializeNotifications, INotificationClient } from "./helpers/notifications-helper";
 import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
-import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./services/kcur-service";
 import { executekGkCURService } from "./services/kg-kcur-rate-service";
 import { executeMentoService } from "./services/mento-arbitrage-service";
@@ -81,12 +80,11 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
     throw new Error("Cannot proceed, the remaining services depend on the kCur price, which could not be obtained");
   }
 
-  const kGkCurExchangeRate = await executekGkCURService(kCurPrice, signer);
-
   //await Promise.all([
+  await executekGkCURService(kCurPrice, signer);
   await executeKCurService(kCurPrice, signer);
-  await executeMentoService(kCurPrice, relayerInfo.address, kGkCurExchangeRate, signer);
-  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
+  await executeMentoService(kCurPrice, relayerInfo.address, signer);
+  //  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
   //]);
 
   if (failedStatus) {
