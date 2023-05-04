@@ -186,6 +186,12 @@ export const executeFloorAndCeilingService = async (
         serviceName,
       );
       /**
+       * tell kCUR token to allow the Vault to spend kCUR on behalf of the Relayer
+       */
+      const vault = getContract("Vault", signer);
+
+      await createAllowance(signer, cUsdContract, "cUSD", delta, relayerAddress, vault.address, serviceName);
+      /**
        * buy kCUR with cUSD
        */
       const tx: ITransaction = await sendBuyOrSell(
