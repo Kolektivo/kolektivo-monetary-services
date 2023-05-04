@@ -89,7 +89,10 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
 
   if (failedStatus) {
     clearFailedStatus();
-    throw new Error("One or more services failed");
+    // eslint-disable-next-line no-console
+    console.error("One or more services failed");
+    return "One or more services failed";
+    // throw new Error("One or more services failed");
   } else {
     return "Succeeded";
   }
