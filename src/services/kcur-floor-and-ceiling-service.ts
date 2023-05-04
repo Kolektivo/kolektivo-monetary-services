@@ -1,11 +1,12 @@
 import { ITransaction } from "../globals";
-import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
+import BigNumberJs, { toBigNumberJs } from "../helpers/bigNumberJsService";
+import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber } from "ethers";
-import { BytesLike, parseEther } from "ethers/lib/utils";
+import { BytesLike } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
 
@@ -35,9 +36,9 @@ const sendBuyOrSell = async (
   kCurContractAddress: string,
   cUsdContractAddress: string,
   /**
-   * amount we're paying in
+   * number of tokens we're paying in
    */
-  amount: number,
+  amount: BigNumber,
   /**
    * if true then we're buying kCUR with cUSD
    * if false then we're buying cUSD with kCUR
@@ -75,7 +76,7 @@ const sendBuyOrSell = async (
     /**
      * what we are paying.
      */
-    amount: parseEther(amount.toString()),
+    amount: amount,
     /**
      * always empty string
      */
@@ -100,7 +101,7 @@ const sendBuyOrSell = async (
     [batchSwapStep],
     assets,
     batchSwapStep.amount,
-    BigNumber.from("10000000000000000"),
+    BigNumber.from("10000000000000000"), // TODO - figure out what this should be
     funds,
     limits,
     deadline,
@@ -109,7 +110,7 @@ const sendBuyOrSell = async (
 
 const doit = async (
   isFloor: boolean,
-  delta: number,
+  delta: BigNumber,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   kCurContract: any,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,36 +172,65 @@ export const executeFloorAndCeilingService = async (
   try {
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("CuracaoReserveToken", signer);
-    const cUsdContract = getContract("cUSD", signer);
+    // const cUsdContract = getContract("cUSD", signer);
     const proxyPoolContract = getContract("ProxyPool", signer);
-    const reserveValue = fromWeiToNumber((await reserveContract.reserveStatus())[0], 18);
-    const kCurTotalSupply = fromWeiToNumber(await kCurContract.totalSupply(), 18);
+    /**
+     * reserve value in USD
+     */
+    const reserveValue: BigNumberJs = toBigNumberJs((await reserveContract.reserveStatus())[0]);
+    const kCurTotalSupply: BigNumberJs = toBigNumberJs(await kCurContract.totalSupply());
 
-    if (!kCurTotalSupply) {
+    if (kCurTotalSupply.isZero()) {
       throw new Error("kCur totalSupply is zero");
     }
-    const floor = reserveValue / kCurTotalSupply;
-    logMessage(serviceName, `reserve floor: ${floor}`);
-
-    const ceilingMultiplier = Number.parseFloat(await proxyPoolContract.ceilingMultiplier()) / 10000;
-
+    /** floor in USD */
+    const floor: number = reserveValue.dividedBy(kCurTotalSupply).toNumber();
+    logMessage(serviceName, `reserve floor: ${floor.toString()}`);
+    /**
+     * multiplier as a number
+     */
+    const ceilingMultiplier: number = toBigNumberJs(await proxyPoolContract.ceilingMultiplier())
+      .dividedBy(10000)
+      .toNumber();
+    /**
+     * ceiling in USD
+     */
     const ceiling = floor * ceilingMultiplier;
     logMessage(serviceName, `reserve ceiling: ${ceiling}`);
 
     // const reserveToken = await proxyPoolContract.reserveToken();
     // const pairToken = await proxyPoolContract.pairToken();
 
-    if (kCurPrice < floor) {
-      logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
-      const delta = floor - kCurPrice + 0.001; // add just a little buffer
-      const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
-      logMessage(serviceName, `Bought ${delta} cUSD with kCUR, tx hash: ${tx.hash}`);
-    } else if (kCurPrice > ceiling) {
-      logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling}`);
-      const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
-      const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
-      logMessage(serviceName, `Bought ${delta} kCUR with cUSD, tx hash: ${tx.hash}`);
-    }
+    /**
+     * TODO: this logic makes no sense.  Gtta find better logic
+     */
+    // if (kCurPrice < floor) {
+    //   logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
+    //   const delta = floor - kCurPrice + 0.001 / kCurPrice;
+    //   const tx = await doit(
+    //     true,
+    //     BigNumber.from(delta),
+    //     kCurContract,
+    //     cUsdContract,
+    //     relayerAddress,
+    //     proxyPoolContract,
+    //     signer,
+    //   );
+    //   logMessage(serviceName, `Bought ${delta.toString()} cUSD with kCUR, tx hash: ${tx.hash}`);
+    // } else if (kCurPrice > ceiling) {
+    //   logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
+    //   const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
+    //   const tx = await doit(
+    //     false,
+    //     BigNumber.from(delta),
+    //     kCurContract,
+    //     cUsdContract,
+    //     relayerAddress,
+    //     proxyPoolContract,
+    //     signer,
+    //   );
+    //   logMessage(serviceName, `Bought ${delta} kCUR with cUSD, tx hash: ${tx.hash}`);
+    // }
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }

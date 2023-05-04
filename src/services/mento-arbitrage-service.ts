@@ -1,62 +1,13 @@
 import { ITransaction, KGUILDER_USDPRICE } from "../globals";
-import { getContractAddress } from "../helpers/abi-helper";
-import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
+import BigNumberJs, { toBigNumberJs } from "../helpers/bigNumberJsService";
+import { fromWei, getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
-import { createAllowance } from "../helpers/tokens-helper";
+import { IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber } from "ethers/lib/ethers";
-import { parseEther } from "ethers/lib/utils";
+import { BigNumber } from "ethers";
 
 const serviceName = "Mento Service";
-const MENTO_BADGE_ID = 420421;
-
-/**
- * how to use the badger to gain access to the mentoservice:
- * https://github.com/Kolektivo/kolektivo-governance-contracts/pull/45
- */
-const sendBuyOrSell = async (
-  signer: DefenderRelaySigner,
-  relayerAddress: string,
-  /**
-   * amount paying if selling, or amount receiving if buying
-   */
-  amount: number,
-  /**
-   * minimum amount receiving if selling, or maximum amount paying if buying
-   */
-  amountLimit: number,
-  /**
-   * In MentoExchange, gold refers to kCUR, !gold refers to kG
-   * When buying: gold is to buy kCUR, !gold is to buy kG
-   * When selling: gold is to sell kCUR, !gold is to sell kG
-   */
-  gold: boolean,
-  /**
-   * false to sell
-   */
-  buy: boolean,
-): Promise<ITransaction> => {
-  const bac = getContract("BAC", signer);
-
-  const mentoExchange = getContract("Exchange", signer);
-
-  // get function params for execTransactionFromModule from TransactionLike object
-  const txLike = await mentoExchange.populateTransaction[buy ? "buy" : "sell"](
-    relayerAddress,
-    parseEther(amount.toString()),
-    parseEther(amountLimit.toString()),
-    gold,
-  );
-  const { to, data } = txLike;
-
-  // the other required params must be provided by the caller (eg the arbitrage service)
-  const operation = 0; // corresponds to `call` and is always the case for our use cases
-  const badgeId = MENTO_BADGE_ID;
-
-  // call BAC
-  return bac.execTransactionFromModule(to, BigNumber.from(0), data, operation, badgeId);
-};
 
 export const executeMentoService = async (
   kCurPrice: number,
@@ -66,50 +17,57 @@ export const executeMentoService = async (
   logMessage(serviceName, "executing...");
 
   try {
-    const kCurContract = getContract("CuracaoReserveToken", signer);
-    const kGContract = getContract("KolektivoGuilder", signer);
+    const kCurContract = getContract("CuracaoReserveToken", signer) as unknown as IErc20Token;
+    const kGContract = getContract("KolektivoGuilder", signer) as unknown as IErc20Token;
     const mentoReserveContract = getContract("MentoReserve", signer);
-    /**
-     * TODO: is safe to assume the results will not overflow Number?
-     */
-    const kCurTotalValueMento =
-      fromWeiToNumber(await kCurContract.balanceOf(mentoReserveContract.address), 18) * kCurPrice;
+    logMessage(serviceName, `MentoReserve address is: ${mentoReserveContract.address}`);
 
     // eslint-disable-next-line prettier/prettier
-    const kGTotalValueStablePool =
-      fromWeiToNumber(await kGContract.totalSupply(), 18) * KGUILDER_USDPRICE; // fixed price of kG
-
-    // const kGuilderPrice = KGUILDER_USDPRICE;
-    // const kCurKGuilderRatio = 0;
-    // const kGuilderPool = getContract("kGuilder Pool", signer); // getContract("kGuilderPool", signer);
-
+    const kCurTotalValue = BigNumber.from(toBigNumberJs((await kCurContract.balanceOf(mentoReserveContract.address))).times(kCurPrice).integerValue(BigNumberJs.ROUND_CEIL).toString()); // round up one wei;
     /**
-     * fake buying kG
+     * using the fixed price of kG
      */
-    // how much kG to buy with kCUR
-    const receiveAmount = 0.00001;
-    // max kG to receive in return
-    const maxPayAmount = 0.00001;
-    /**
-     * approve withdrawal from the spend account
-     */
-    const mentoExchangeAddress = getContractAddress("Exchange");
-    /**
-     * tell kCUR token to allow the MentoExchange to spend kCUR on behalf of the Relayer
-     */
-    await createAllowance(
-      signer,
-      kCurContract,
-      "kCUR",
-      maxPayAmount,
-      relayerAddress,
-      mentoExchangeAddress,
-      serviceName,
-    );
+    // eslint-disable-next-line prettier/prettier
+    const kGTotalValue = BigNumber.from(toBigNumberJs((await kGContract.totalSupply())).times(KGUILDER_USDPRICE).integerValue(BigNumberJs.ROUND_CEIL).toString()); // round up one wei
 
-    const tx = await sendBuyOrSell(signer, relayerAddress, receiveAmount, maxPayAmount, false, true);
+    if (kCurTotalValue.lt(kGTotalValue)) {
+      /**
+       * then need to increase the balance of kCUR in the MentoReserve.
+       * round up cause we don't want a fractional number of tokens, and rounding down wouldn.t give us enough.
+       */
+      const amount = kGTotalValue.sub(kCurTotalValue);
+      const relayerBalance = await kCurContract.balanceOf(relayerAddress);
 
-    logMessage(serviceName, `Attempted to buy ${receiveAmount} kG with max kCUR ${maxPayAmount}, tx hash: ${tx.hash}`);
+      if (relayerBalance.lt(amount)) {
+        throw new Error(
+          `The Relayer has insufficient balance (${fromWei(
+            relayerBalance,
+            18,
+          )}) to send to the MentoReserve (needs: ${fromWei(amount, 18)})`,
+        );
+      }
+      const tx: ITransaction = await kCurContract.transfer(mentoReserveContract.address, amount);
+      logMessage(serviceName, `Transferred ${fromWei(amount, 18)} kCur to the MentoReserve, tx hash: ${tx.hash}`);
+    } else if (kGTotalValue.lt(kCurTotalValue)) {
+      /**
+       * then need to decrease the balance of kCUR in the MentoReserve.
+       * round up cause we don't want a fractional number of tokens, and rounding down wouldn.t give us enough.
+       */
+      const amount = kCurTotalValue.sub(kGTotalValue);
+      const mentoExchangeAvailable = await mentoReserveContract.getUnfrozenBalance();
+
+      if (mentoExchangeAvailable.lt(amount)) {
+        throw new Error(
+          `The MentoExchange has insufficient balance (${fromWei(
+            mentoExchangeAvailable,
+            18,
+          )}) to send to the Relayer (needs: ${fromWei(amount, 18)})`,
+        );
+      }
+
+      const tx: ITransaction = await mentoReserveContract.transferExchangeGold(relayerAddress, amount);
+      logMessage(serviceName, `Transferred ${fromWei(amount, 18)} kCur from the MentoReserve, tx hash: ${tx.hash}`);
+    }
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }

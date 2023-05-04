@@ -81,8 +81,8 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   }
 
   //await Promise.all([
-  await executekGkCURService(kCurPrice, signer);
   await executeKCurService(kCurPrice, signer);
+  await executekGkCURService(kCurPrice, signer);
   await executeMentoService(kCurPrice, relayerInfo.address, signer);
   //  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
   //]);

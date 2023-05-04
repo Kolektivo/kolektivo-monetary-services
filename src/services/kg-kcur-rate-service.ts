@@ -1,11 +1,10 @@
 import { ITransaction, KGUILDER_USDPRICE } from "../globals";
 import { getContractAddress } from "../helpers/abi-helper";
-import { getContract } from "../helpers/contracts-helper";
+import { getContract, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { constants } from "ethers";
-import { parseUnits } from "ethers/lib/utils";
 
 const serviceName = "kG-kCur Rate Service";
 
@@ -22,11 +21,10 @@ export const executekGkCURService = async (
       throw new Error("kCUR price is too small");
     }
     /**
-     * An exchange rate: how many kG needed to purchase one kCUR.  Is what it would be
-     * if kG were properly valued, that is, == Guilder.  TODO: Confirm we should not instead be
-     * using the current kG price from the stable pool.
+     * An exchange rate: how many kG needed to purchase one kCUR.
+     * Value of kG is fixed to KGUILDER_USDPRICE.
      */
-    kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
+    kGkCurExchangeRate = Math.ceil(1 / (KGUILDER_USDPRICE / kCurPrice));
 
     const kGTokenContractAddress = getContractAddress("KolektivoGuilder");
     logMessage(serviceName, "kGuilder address: ", kGTokenContractAddress);
@@ -40,7 +38,7 @@ export const executekGkCURService = async (
      */
     const tx: ITransaction = await mentoOracleContract.report(
       kGTokenContractAddress,
-      parseUnits(kGkCurExchangeRate.toString(), 24),
+      toWei(kGkCurExchangeRate, 24),
       constants.AddressZero,
       constants.AddressZero,
     );

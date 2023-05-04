@@ -5,9 +5,18 @@ import { logMessage } from "./errors-helper";
 import { sendNotification } from "./notifications-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
-import { parseEther } from "ethers/lib/utils";
+import { BigNumber, BigNumberish } from "ethers/lib/ethers";
 
 const MIN_TOKENBALANCE = 50;
+
+export interface IErc20Token {
+  allowance(owner: string, spender: string): Promise<BigNumber>;
+  approve(spender: string, amount: BigNumberish): Promise<ITransaction>; // boolean
+  balanceOf(account: string): Promise<BigNumber>;
+  totalSupply(): Promise<BigNumber>;
+  transfer(recipient: string, amount: BigNumberish): Promise<ITransaction>; // boolean
+  transferFrom(sender: string, recipient: string, amount: BigNumberish): Promise<ITransaction>; // boolean
+}
 
 const reportShortfall = (balance: number, tokenName: string): void => {
   const message = `Relayer token balances: ${tokenName} (${balance}) has fallen below the minimum value of ${MIN_TOKENBALANCE}`;
@@ -49,27 +58,31 @@ export const createAllowance = async (
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   tokenContract: any,
   tokenContractName: string,
-  maxPayAmount: number,
-  relayerAddress: string, // always the owner
+  maxPayAmount: BigNumber,
+  relayerstring: string, // always the owner
   spender: string,
   serviceName: string,
 ): Promise<void> => {
-  const relayerBalance = fromWeiToNumber(await tokenContract.balanceOf(relayerAddress), 18);
+  const relayerBalance = await tokenContract.balanceOf(relayerstring);
 
-  if (relayerBalance < maxPayAmount) {
-    throw new Error("Relayer is lacking the sufficient funds to pay ${maxPayAmount} of ${tokenContractName}");
+  if (relayerBalance.lt(maxPayAmount)) {
+    throw new Error(
+      `Relayer is lacking the sufficient funds to pay ${maxPayAmount.toString()} of ${tokenContractName}`,
+    );
   }
 
   let tx: ITransaction | undefined;
-  const currentAllowance = fromWeiToNumber(await tokenContract.allowance(relayerAddress, spender), 18);
-  if (currentAllowance < maxPayAmount) {
+  const currentAllowance = await tokenContract.allowance(relayerstring, spender);
+  if (currentAllowance.lt(maxPayAmount)) {
     /**
      * The Relayer will always be the owner (msg.sender)
      */
-    tx = await tokenContract.approve(spender, parseEther(maxPayAmount.toString()));
+    tx = await tokenContract.approve(spender, maxPayAmount);
   }
   logMessage(
     serviceName,
-    `Approved max purchase of ${maxPayAmount} of ${tokenContractName}, tx hash: ${tx?.hash ?? "no tx needed"}`,
+    `Approved max purchase of ${maxPayAmount.toString()} of ${tokenContractName}, tx hash: ${
+      tx?.hash ?? "no tx needed"
+    }`,
   );
 };
