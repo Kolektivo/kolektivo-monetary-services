@@ -7,7 +7,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "build": "tsc",
+    "build": "rollup -c",
     "start": "ts-node src/index.ts",
     "fetchAbis": "node scripts/fetchAbis.js",
     "deploy": "node scripts/deploy.js"
@@ -44,7 +44,12 @@
     "fs-extra": "^11.1.1",
     "glob": "^10.2.1",
     "ts-node": "^9.0.0",
-    "typescript": "^5.0.4"
+    "typescript": "^5.0.4",
+    "@rollup/plugin-commonjs": "^16.0.0",
+    "@rollup/plugin-json": "^4.1.0",
+    "@rollup/plugin-node-resolve": "^10.0.0",
+    "@rollup/plugin-typescript": "^6.1.0",
+    "rollup": "^2.33.3"
   },
   "dependencies": {
     "axios": "^0.21.2",
