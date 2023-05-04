@@ -63,7 +63,10 @@ export const createAllowance = async (
   let tx: ITransaction | undefined;
   const currentAllowance = Number.parseFloat(formatEther(await tokenContract.allowance(owner, spender)));
   if (currentAllowance < maxPayAmount) {
-    tx = await tokenContract.connect(signer).approve(spender, parseEther(maxPayAmount.toString()));
+    /**
+     * The Relayer will always be the owner (msg.sender)
+     */
+    tx = await tokenContract.approve(spender, parseEther(maxPayAmount.toString()));
   }
   logMessage(
     serviceName,
