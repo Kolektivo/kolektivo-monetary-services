@@ -22,13 +22,21 @@ export const executeMentoService = async (
     const mentoReserveContract = getContract("MentoReserve", signer);
     logMessage(serviceName, `MentoReserve address is: ${mentoReserveContract.address}`);
 
-    // eslint-disable-next-line prettier/prettier
-    const kCurTotalValue = BigNumber.from(toBigNumberJs((await kCurContract.balanceOf(mentoReserveContract.address))).times(kCurPrice).integerValue(BigNumberJs.ROUND_CEIL).toString()); // round up one wei;
+    const kCurTotalValue = BigNumber.from(
+      toBigNumberJs(await kCurContract.balanceOf(mentoReserveContract.address))
+        .times(kCurPrice)
+        .integerValue(BigNumberJs.ROUND_CEIL) // round up one wei
+        .toString(),
+    );
     /**
      * using the fixed price of kG
      */
-    // eslint-disable-next-line prettier/prettier
-    const kGTotalValue = BigNumber.from(toBigNumberJs((await kGContract.totalSupply())).times(KGUILDER_USDPRICE).integerValue(BigNumberJs.ROUND_CEIL).toString()); // round up one wei
+    const kGTotalValue = BigNumber.from(
+      toBigNumberJs(await kGContract.totalSupply())
+        .times(KGUILDER_USDPRICE)
+        .integerValue(BigNumberJs.ROUND_CEIL) // round up one wei
+        .toString(),
+    );
 
     if (kCurTotalValue.lt(kGTotalValue)) {
       /**
