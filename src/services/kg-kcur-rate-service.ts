@@ -22,7 +22,9 @@ export const executekGkCURService = async (
       throw new Error("kCUR price is too small");
     }
     /**
-     * exchange rate, how many kG to purchase one kCUR
+     * An exchange rate: how many kG needed to purchase one kCUR.  Is what it would be
+     * if kG were properly valued, that is, == Guilder.  TODO: Confirm we should not instead be
+     * using the current kG price from the stable pool.
      */
     kGkCurExchangeRate = 1 / (KGUILDER_USDPRICE / kCurPrice);
 
