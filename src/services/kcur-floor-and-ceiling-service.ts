@@ -1,11 +1,10 @@
 import { ITransaction } from "../globals";
-import BigNumberJs, { toBigNumberJs } from "../helpers/bigNumberJsService";
 import { getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber } from "ethers";
+import { BigNumber, FixedNumber } from "ethers";
 import { BytesLike } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
@@ -177,21 +176,21 @@ export const executeFloorAndCeilingService = async (
     /**
      * reserve value in USD
      */
-    const reserveValue: BigNumberJs = toBigNumberJs((await reserveContract.reserveStatus())[0]);
-    const kCurTotalSupply: BigNumberJs = toBigNumberJs(await kCurContract.totalSupply());
+    const reserveValue = FixedNumber.from((await reserveContract.reserveStatus())[0].toString());
+    const kCurTotalSupply = FixedNumber.from(await kCurContract.totalSupply().toString());
 
     if (kCurTotalSupply.isZero()) {
       throw new Error("kCur totalSupply is zero");
     }
     /** floor in USD */
-    const floor: number = reserveValue.dividedBy(kCurTotalSupply).toNumber();
+    const floor: number = reserveValue.divUnsafe(FixedNumber.from(kCurTotalSupply)).toUnsafeFloat();
     logMessage(serviceName, `reserve floor: ${floor.toString()}`);
     /**
      * multiplier as a number
      */
-    const ceilingMultiplier: number = toBigNumberJs(await proxyPoolContract.ceilingMultiplier())
-      .dividedBy(10000)
-      .toNumber();
+    const ceilingMultiplier: number = FixedNumber.from(await proxyPoolContract.ceilingMultiplier())
+      .divUnsafe(FixedNumber.from(10000))
+      .toUnsafeFloat();
     /**
      * ceiling in USD
      */

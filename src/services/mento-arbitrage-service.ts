@@ -1,11 +1,10 @@
 import { ITransaction, KGUILDER_USDPRICE } from "../globals";
-import BigNumberJs, { toBigNumberJs } from "../helpers/bigNumberJsService";
 import { fromWei, getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber } from "ethers";
+import { BigNumber, FixedNumber } from "ethers";
 
 const serviceName = "Mento Service";
 
@@ -23,18 +22,23 @@ export const executeMentoService = async (
     logMessage(serviceName, `MentoReserve address is: ${mentoReserveContract.address}`);
 
     const kCurTotalValue = BigNumber.from(
-      toBigNumberJs(await kCurContract.balanceOf(mentoReserveContract.address))
-        .times(kCurPrice)
-        .integerValue(BigNumberJs.ROUND_CEIL) // round up one wei
+      FixedNumber.fromValue(await kCurContract.balanceOf(mentoReserveContract.address), 0, "fixed32x18")
+        .mulUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18"))
+        .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // round up one wei
+        .round(0)
+        .toFormat("fixed32x0")
         .toString(),
     );
+
     /**
      * using the fixed price of kG
      */
     const kGTotalValue = BigNumber.from(
-      toBigNumberJs(await kGContract.totalSupply())
-        .times(KGUILDER_USDPRICE)
-        .integerValue(BigNumberJs.ROUND_CEIL) // round up one wei
+      FixedNumber.fromValue(await kGContract.totalSupply(), 0, "fixed32x18")
+        .mulUnsafe(FixedNumber.fromString(KGUILDER_USDPRICE.toString(), "fixed32x18"))
+        .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // round up one wei
+        .round(0)
+        .toFormat("fixed32x0")
         .toString(),
     );
 
