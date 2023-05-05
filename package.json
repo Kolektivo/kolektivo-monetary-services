@@ -9,7 +9,8 @@
     "lint:fix": "eslint src --ext .ts --fix",
     "build": "cross-env DOTENV_CONFIG_PATH=.env tsc",
     "build-prod": "cross-env production=1 DOTENV_CONFIG_PATH=.env.production tsc",
-    "start": "ts-node src/index.ts",
+    "start": "cross-env DOTENV_CONFIG_PATH=.env ts-node src/index.ts",
+    "start-prod": "cross-env production=1 DOTENV_CONFIG_PATH=.env.production ts-node src/index.ts",
     "fetchAbis": "node scripts/fetchAbis.js",
     "deploy": "cross-env DOTENV_CONFIG_PATH=.env node scripts/deploy.js",
     "deploy-prod": "cross-env production=1 DOTENV_CONFIG_PATH=.env.production node scripts/deploy.js"

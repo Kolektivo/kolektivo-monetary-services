@@ -1,3 +1,5 @@
+import { environment } from "../globals";
+
 import { logMessage } from "./errors-helper";
 
 export interface IContractInfo {
@@ -33,11 +35,18 @@ export const fetchAbis = (): void => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!abis) {
     logMessage("Abi Helper", "fetching abis");
+
+    /**
+     * note you should be able to run the production build locally if you have "production=1" in your environment
+     */
+    try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    // TODO restore this when ready for production: abis = require(`./abis/${RUNNING_LOCALLY ? "celo-test.json" : "celo.json"}`);
-    abis = require("../abis/celo-test.json");
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!abis) {
+      abis = require(`../abis/${
+        !environment.runningLocally || process.env.production ? "celo.json" : "celo-test.json"
+      }`);
+    } catch {
+      // abis = require("../abis/celo-test.json");
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       throw new Error("abis not found");
     }
 

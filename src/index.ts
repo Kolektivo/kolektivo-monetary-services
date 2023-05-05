@@ -12,12 +12,13 @@ import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling
 import { executeKCurService, getKCurPrice } from "./services/kcur-service";
 import { executekGkCURService } from "./services/kg-kcur-rate-service";
 import { executeMentoService } from "./services/mento-arbitrage-service";
+import { environment } from "./globals";
 
 import { Relayer } from "defender-relay-client";
 import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { RelayerModel } from "defender-relay-client/lib/relayer";
 
-export const RUNNING_LOCALLY = require.main === module;
+environment.runningLocally = require.main === module;
 
 const serviceName = "Handler";
 
@@ -51,7 +52,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   const signer = new DefenderRelaySigner(event, provider, { speed: "fast" });
 
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const coinGeckoApiKey = RUNNING_LOCALLY ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
+  const coinGeckoApiKey = environment.runningLocally ? process.env.COINGECKO_API_KEY! : event.secrets.CoingeckoApiKey;
 
   await confirmTokenBalances(relayerInfo.address, signer);
 
@@ -110,7 +111,7 @@ interface IEnvInfo {
   API_SECRET_TEAM: string;
 }
 
-if (RUNNING_LOCALLY) {
+if (environment.runningLocally) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
   const { API_KEY: apiKey, API_SECRET: apiSecret } = process.env as unknown as IEnvInfo;

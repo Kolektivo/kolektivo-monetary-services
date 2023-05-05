@@ -43,3 +43,9 @@ Create a ".env" file for a development build:
 And another for a production built as ".env.production".
 
 `npm run start`
+
+Or to run production locally:
+
+`npm run deploy-prod`
+
+Does the same but with production ABIs and using keys from a ".env.production" file.
