@@ -103,15 +103,17 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
  * To run locally (this code will not be executed in Autotasks)
  */
 // Sample typescript type definitions
-type EnvInfo = {
+interface IEnvInfo {
   API_KEY: string;
   API_SECRET: string;
-};
+  API_KEY_TEAM: string;
+  API_SECRET_TEAM: string;
+}
 
 if (RUNNING_LOCALLY) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  require("dotenv").config();
-  const { API_KEY: apiKey, API_SECRET: apiSecret } = process.env as EnvInfo;
+  require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
+  const { API_KEY: apiKey, API_SECRET: apiSecret } = process.env as unknown as IEnvInfo;
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 

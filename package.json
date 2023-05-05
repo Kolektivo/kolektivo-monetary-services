@@ -7,10 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
-    "build": "tsc",
+    "build": "cross-env DOTENV_CONFIG_PATH=.env tsc",
+    "build-prod": "cross-env production=1 DOTENV_CONFIG_PATH=.env.production tsc",
     "start": "ts-node src/index.ts",
     "fetchAbis": "node scripts/fetchAbis.js",
-    "deploy": "node scripts/deploy.js"
+    "deploy": "cross-env DOTENV_CONFIG_PATH=.env node scripts/deploy.js",
+    "deploy-prod": "cross-env production=1 DOTENV_CONFIG_PATH=.env.production node scripts/deploy.js"
   },
   "repository": {
     "type": "git",
@@ -31,6 +33,7 @@
     "@types/node": "^14.14.10",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
     "@typescript-eslint/parser": "^5.57.1",
+    "cross-env": "^7.0.3",
     "defender-autotask-client": "^1.42.0",
     "defender-autotask-utils": "^1.42.0",
     "dotenv": "^8.2.0",
