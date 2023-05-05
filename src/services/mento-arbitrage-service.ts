@@ -42,6 +42,9 @@ export const executeMentoService = async (
         .toString(),
     );
 
+    logMessage(serviceName, `kCUR total value: ${kCurTotalValue.toString()}`);
+    logMessage(serviceName, `kG total value: ${kGTotalValue.toString()}`);
+
     if (kCurTotalValue.lt(kGTotalValue)) {
       /**
        * then need to increase the balance of kCUR in the MentoReserve.
