@@ -1,6 +1,6 @@
 import { ITransaction } from "../globals";
 
-import { fromWeiToNumber, getContract } from "./contracts-helper";
+import { fromWei, fromWeiToNumber, getContract } from "./contracts-helper";
 import { logMessage } from "./errors-helper";
 import { sendNotification } from "./notifications-helper";
 
@@ -59,11 +59,11 @@ export const createAllowance = async (
   tokenContract: any,
   tokenContractName: string,
   maxPayAmount: BigNumber,
-  relayerstring: string, // always the owner
-  spender: string,
+  relayerAddress: string, // always the owner
+  spenderAddress: string,
   serviceName: string,
 ): Promise<void> => {
-  const relayerBalance = await tokenContract.balanceOf(relayerstring);
+  const relayerBalance = await tokenContract.balanceOf(relayerAddress);
 
   if (relayerBalance.lt(maxPayAmount)) {
     throw new Error(
@@ -72,17 +72,18 @@ export const createAllowance = async (
   }
 
   let tx: ITransaction | undefined;
-  const currentAllowance = await tokenContract.allowance(relayerstring, spender);
+  const currentAllowance = await tokenContract.allowance(relayerAddress, spenderAddress);
   if (currentAllowance.lt(maxPayAmount)) {
     /**
      * The Relayer will always be the owner (msg.sender)
      */
-    tx = await tokenContract.approve(spender, maxPayAmount);
+    tx = await tokenContract.approve(spenderAddress, maxPayAmount);
   }
   logMessage(
     serviceName,
-    `Approved max purchase of ${maxPayAmount.toString()} of ${tokenContractName}, tx hash: ${
-      tx?.hash ?? "no tx needed"
-    }`,
+    `Approved max transfer of ${fromWei(
+      maxPayAmount,
+      18,
+    )} of ${tokenContractName} from Relayer to ${spenderAddress}, tx hash: ${tx?.hash ?? "no tx needed"}`,
   );
 };

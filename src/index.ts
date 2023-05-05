@@ -8,9 +8,8 @@ import { clearFailedStatus, failedStatus, logMessage, logWarning } from "./helpe
 import { initializeNotifications, INotificationClient } from "./helpers/notifications-helper";
 import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
-import { executeKCurService, getKCurPrice } from "./services/kcur-service";
-import { executekGkCURService } from "./services/kg-kcur-rate-service";
-import { executeMentoService } from "./services/mento-arbitrage-service";
+import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
+import { getKCurPrice } from "./services/kcur-service";
 
 import { Relayer } from "defender-relay-client";
 import { DefenderRelayProvider, DefenderRelaySigner } from "defender-relay-client/lib/ethers";
@@ -67,24 +66,24 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
    * Future versions will also include an ethers provider aware of this.
    */
 
-  let cusdPrice = await executeCusdService(coinGeckoApiKey, signer);
+  let cUsdPrice = await executeCusdService(coinGeckoApiKey, signer);
 
-  if (cusdPrice == undefined) {
-    cusdPrice = 1; // good enough and doesn't fail the other service
+  if (cUsdPrice == undefined) {
+    cUsdPrice = 1; // good enough and doesn't fail the other service
     logWarning(serviceName, "Due to an error, defaulting cusdPrice to 1");
   }
 
-  const kCurPrice = await getKCurPrice(cusdPrice, signer);
+  const kCurPrice = await getKCurPrice(cUsdPrice, signer);
 
   if (kCurPrice === undefined) {
     throw new Error("Cannot proceed, the remaining services depend on the kCur price, which could not be obtained");
   }
 
   //await Promise.all([
-  await executeKCurService(kCurPrice, signer);
-  await executekGkCURService(kCurPrice, signer);
-  await executeMentoService(kCurPrice, relayerInfo.address, signer);
-  //  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
+  // await executeKCurService(kCurPrice, signer);
+  // await executekGkCURService(kCurPrice, signer);
+  // await executeMentoService(kCurPrice, relayerInfo.address, signer);
+  await executeFloorAndCeilingService(cUsdPrice, kCurPrice, relayerInfo.address, signer);
   //]);
 
   if (failedStatus) {

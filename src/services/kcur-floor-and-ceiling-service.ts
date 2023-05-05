@@ -1,5 +1,5 @@
 import { ITransaction } from "../globals";
-import { getContract } from "../helpers/contracts-helper";
+import { fromWei, getContract, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance } from "../helpers/tokens-helper";
 
@@ -35,14 +35,14 @@ const sendBuyOrSell = async (
   kCurContractAddress: string,
   cUsdContractAddress: string,
   /**
-   * number of tokens we're paying in
+   * amount of cUSD when buying or kCUR to give up when selling
    */
   amount: BigNumber,
   /**
    * if true then we're buying kCUR with cUSD
-   * if false then we're buying cUSD with kCUR
+   * if false then we're selling kCUR for cUSD
    */
-  buyingKCur: boolean,
+  isBuying: boolean,
 ): Promise<ITransaction> => {
   /**
    * docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L910
@@ -82,25 +82,21 @@ const sendBuyOrSell = async (
     userData: "0x",
   };
   /**
-   * empty array to set limits
    * limit says how many tokens can Vault use on behalf of user
-   * for us, it will be always empty array
    */
-  const limits: Array<number> = [];
+  const limits: Array<BigNumber> = [toWei(1000000, 18), toWei(1000000, 18)];
   /**
    * deadline is by what time the swap should be executed
    */
-  const deadline: number = 60 * 60; // for us we can set it to one hour | used previously in Prime Launch
+  const currentTimestamp = Math.floor(Date.now() / 1000);
+  const deadline: number = currentTimestamp + 60 * 60; // for us we can set it to one hour | used previously in Prime Launch
+  const assets = isBuying ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
 
-  const assets = buyingKCur ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
-  /**
-   * make the purchase
-   */
   return proxyPoolContract.batchSwapExactIn(
     [batchSwapStep],
     assets,
     batchSwapStep.amount,
-    BigNumber.from("10000000000000000"), // TODO - figure out what this should be
+    100000000, // minTotalAmountOut  TODO - figure out what this should be
     funds,
     limits,
     deadline,
@@ -108,7 +104,14 @@ const sendBuyOrSell = async (
 };
 
 const doit = async (
-  isFloor: boolean,
+  /**
+   * if true then we're buying kCUR with cUSD
+   * if false then we're selling kCUR for cUSD
+   */
+  isBuying: boolean,
+  /**
+   * amount of cUSD when buying or kCUR to give up when selling
+   */
   delta: BigNumber,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   kCurContract: any,
@@ -124,13 +127,13 @@ const doit = async (
    */
   const vault = getContract("Vault", signer);
   /**
-   * tell kCUR token to allow the proxy contract to spend kCUR on behalf of the Relayer
+   * tell token to allow the proxy contract to spend token on behalf of the Relayer
    */
   await Promise.all([
     createAllowance(
       signer,
       kCurContract,
-      isFloor ? "kCUR" : "cUSD",
+      isBuying ? "cUSD" : "kCUR",
       delta,
       relayerAddress,
       proxyPoolContract.address,
@@ -140,16 +143,14 @@ const doit = async (
     // eslint-disable-next-line prettier/prettier
     createAllowance(signer,
       kCurContract,
-      isFloor ? "kCUR" : "cUSD",
+      isBuying ? "cUSD" : "kCUR",
       delta,
       relayerAddress,
       vault.address,
-      serviceName),
+      serviceName,
+    ),
   ]);
-  /**
-   * isFloor: buy cUSD with kCUR
-   * else: buy kCUR with cUSD
-   */
+
   return sendBuyOrSell(
     signer,
     relayerAddress,
@@ -157,11 +158,12 @@ const doit = async (
     kCurContract.address,
     cUsdContract.address,
     delta,
-    !isFloor,
+    isBuying,
   );
 };
 
 export const executeFloorAndCeilingService = async (
+  cUsdPrice: number,
   kCurPrice: number,
   relayerAddress: string,
   signer: DefenderRelaySigner,
@@ -171,25 +173,29 @@ export const executeFloorAndCeilingService = async (
   try {
     const reserveContract = getContract("Reserve", signer);
     const kCurContract = getContract("CuracaoReserveToken", signer);
-    // const cUsdContract = getContract("cUSD", signer);
+    const cUsdContract = getContract("cUSD", signer);
     const proxyPoolContract = getContract("ProxyPool", signer);
     /**
      * reserve value in USD
      */
-    const reserveValue = FixedNumber.from((await reserveContract.reserveStatus())[0].toString());
-    const kCurTotalSupply = FixedNumber.from(await kCurContract.totalSupply().toString());
+    const reserveValue = FixedNumber.fromValue((await reserveContract.reserveStatus())[0], 0, "fixed32x18");
+    const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
 
     if (kCurTotalSupply.isZero()) {
       throw new Error("kCur totalSupply is zero");
     }
     /** floor in USD */
-    const floor: number = reserveValue.divUnsafe(FixedNumber.from(kCurTotalSupply)).toUnsafeFloat();
+    const floor: number = reserveValue.divUnsafe(kCurTotalSupply).toUnsafeFloat();
     logMessage(serviceName, `reserve floor: ${floor.toString()}`);
     /**
      * multiplier as a number
      */
-    const ceilingMultiplier: number = FixedNumber.from(await proxyPoolContract.ceilingMultiplier())
-      .divUnsafe(FixedNumber.from(10000))
+    const ceilingMultiplier: number = FixedNumber.fromValue(
+      await proxyPoolContract.ceilingMultiplier(),
+      0,
+      "fixed32x18",
+    )
+      .divUnsafe(FixedNumber.fromString("10000", "fixed32x18"))
       .toUnsafeFloat();
     /**
      * ceiling in USD
@@ -201,35 +207,30 @@ export const executeFloorAndCeilingService = async (
     // const pairToken = await proxyPoolContract.pairToken();
 
     /**
-     * TODO: this logic makes no sense.  Gtta find better logic
+     * TODO: this logic makes no sense.  Gotta find better logic
      */
-    // if (kCurPrice < floor) {
-    //   logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
-    //   const delta = floor - kCurPrice + 0.001 / kCurPrice;
-    //   const tx = await doit(
-    //     true,
-    //     BigNumber.from(delta),
-    //     kCurContract,
-    //     cUsdContract,
-    //     relayerAddress,
-    //     proxyPoolContract,
-    //     signer,
-    //   );
-    //   logMessage(serviceName, `Bought ${delta.toString()} cUSD with kCUR, tx hash: ${tx.hash}`);
-    // } else if (kCurPrice > ceiling) {
-    //   logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
-    //   const delta = kCurPrice - ceiling + 0.001; // add just a little buffer
-    //   const tx = await doit(
-    //     false,
-    //     BigNumber.from(delta),
-    //     kCurContract,
-    //     cUsdContract,
-    //     relayerAddress,
-    //     proxyPoolContract,
-    //     signer,
-    //   );
-    //   logMessage(serviceName, `Bought ${delta} kCUR with cUSD, tx hash: ${tx.hash}`);
-    // }
+
+    /**
+     * Is below the floor.  Gotta buy kCUR, using cUSD
+     */
+    if (kCurPrice < floor) {
+      logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
+
+      const delta = toWei((floor - kCurPrice) / kCurPrice, 18).add(1);
+      const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+
+      logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
+      /**
+       * Is above the ceiling, gotta sell kCUR, for cUSD
+       */
+    } else if (kCurPrice > ceiling) {
+      logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
+
+      const delta = toWei((kCurPrice - ceiling) / kCurPrice, 18).add(1); // add just a little buffer
+      const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+
+      logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
+    }
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }
