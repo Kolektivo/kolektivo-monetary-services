@@ -28,12 +28,10 @@ files.forEach(file => {
 /**
  * see here on how to use this API:  https://www.npmjs.com/package/defender-autotask-client
  * and here: https://docs.openzeppelin.com/defender/autotasks-api-reference#code-endpoint
-**/
-const { API_KEY_TEAM: apiKey, API_SECRET_TEAM: apiSecret } = process.env;
-/**
- * comes from the autotask's edit page, or the url of the autotask's page itself.
+ * 
+ * autotask_id comes from the autotask's edit page, or the url of the autotask's page itself.
  */
-const autoTaskId = "f5b9aafb-a5a8-4f55-8ee4-157ea27f7b4b";
+const { API_KEY_TEAM: apiKey, API_SECRET_TEAM: apiSecret, AUTOTASK_ID: autoTaskId } = process.env;
 
 const client = new AutotaskClient({ apiKey, apiSecret });
 client.updateCodeFromFolder(autoTaskId, distPath).then(() => {
