@@ -10,6 +10,7 @@ import { BigNumber, BigNumberish } from "ethers/lib/ethers";
 const MIN_TOKENBALANCE = 50;
 
 export interface IErc20Token {
+  address: string;
   allowance(owner: string, spender: string): Promise<BigNumber>;
   approve(spender: string, amount: BigNumberish): Promise<ITransaction>; // boolean
   balanceOf(account: string): Promise<BigNumber>;
@@ -81,7 +82,7 @@ export const createAllowance = async (
   }
   logMessage(
     serviceName,
-    `Approved max transfer of ${fromWei(
+    `Set allowance of ${fromWei(
       maxPayAmount,
       18,
     )} of ${tokenContractName} from Relayer to ${spenderAddress}, tx hash: ${tx?.hash ?? "no tx needed"}`,

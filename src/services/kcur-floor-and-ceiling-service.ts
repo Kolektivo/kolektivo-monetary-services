@@ -1,7 +1,7 @@
 import { ITransaction } from "../globals";
 import { fromWei, getContract, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
-import { createAllowance } from "../helpers/tokens-helper";
+import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber, FixedNumber } from "ethers";
@@ -35,7 +35,7 @@ const sendBuyOrSell = async (
   kCurContractAddress: string,
   cUsdContractAddress: string,
   /**
-   * amount of cUSD when buying or kCUR to give up when selling
+   * amount of kCUR to buy or sell
    */
   amount: BigNumber,
   /**
@@ -73,7 +73,7 @@ const sendBuyOrSell = async (
      */
     assetOutIndex: 1,
     /**
-     * what we are paying.
+     * amount of kCUR we are buying or selling.
      */
     amount: amount,
     /**
@@ -90,17 +90,33 @@ const sendBuyOrSell = async (
    */
   const currentTimestamp = Math.floor(Date.now() / 1000);
   const deadline: number = currentTimestamp + 60 * 60; // for us we can set it to one hour | used previously in Prime Launch
-  const assets = isBuying ? [cUsdContractAddress, kCurContractAddress] : [kCurContractAddress, cUsdContractAddress];
-
-  return proxyPoolContract.batchSwapExactIn(
-    [batchSwapStep],
-    assets,
-    batchSwapStep.amount,
-    100000000, // minTotalAmountOut  TODO - figure out what this should be
-    funds,
-    limits,
-    deadline,
-  );
+  /**
+   * kCUR is always the "exact" amount
+   */
+  if (isBuying) {
+    logMessage(serviceName, `buying kCUR (${fromWei(batchSwapStep.amount, 18)}) with cUSD`);
+    // buying kCUR (out) with cUSD (in)
+    return proxyPoolContract.batchSwapExactOut(
+      [batchSwapStep],
+      [cUsdContractAddress, kCurContractAddress],
+      batchSwapStep.amount,
+      funds,
+      limits,
+      deadline,
+    );
+  } else {
+    logMessage(serviceName, `selling kCUR (${fromWei(batchSwapStep.amount, 18)}) for cUSD`);
+    // selling kCUR (in) to get cUSD (out)
+    return proxyPoolContract.batchSwapExactIn(
+      [batchSwapStep],
+      [kCurContractAddress, cUsdContractAddress],
+      batchSwapStep.amount,
+      100000000, // minTotalAmountOut  TODO - figure out what this should be
+      funds,
+      limits,
+      deadline,
+    );
+  }
 };
 
 const doit = async (
@@ -110,13 +126,13 @@ const doit = async (
    */
   isBuying: boolean,
   /**
-   * amount of cUSD when buying or kCUR to give up when selling
+   * amount of kCUR to receive when buying or to pay when selling
    */
-  delta: BigNumber,
+  kCurAmount: BigNumber,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  kCurContract: any,
+  kCurContract: IErc20Token,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  cUsdContract: any,
+  cUsdContract: IErc20Token,
   relayerAddress: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxyPoolContract: any,
@@ -128,13 +144,17 @@ const doit = async (
   const vault = getContract("Vault", signer);
   /**
    * tell token to allow the proxy contract to spend token on behalf of the Relayer
+   * Since we can't know the amount of cUSD in advance (kCUr is always the fixed amount int he exchange),
+   * we will set the allowance the full balance of cUSD in relayer (maybe is better than unlimited, wishful thinking).
    */
+  const cUsdAmount = isBuying ? await cUsdContract.balanceOf(relayerAddress) : null;
   await Promise.all([
     createAllowance(
       signer,
       kCurContract,
       isBuying ? "cUSD" : "kCUR",
-      delta,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      isBuying ? cUsdAmount! : kCurAmount,
       relayerAddress,
       proxyPoolContract.address,
       serviceName,
@@ -144,7 +164,8 @@ const doit = async (
     createAllowance(signer,
       kCurContract,
       isBuying ? "cUSD" : "kCUR",
-      delta,
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      isBuying ? cUsdAmount! : kCurAmount,
       relayerAddress,
       vault.address,
       serviceName,
@@ -157,7 +178,7 @@ const doit = async (
     proxyPoolContract,
     kCurContract.address,
     cUsdContract.address,
-    delta,
+    kCurAmount,
     isBuying,
   );
 };
@@ -172,9 +193,11 @@ export const executeFloorAndCeilingService = async (
 
   try {
     const reserveContract = getContract("Reserve", signer);
-    const kCurContract = getContract("CuracaoReserveToken", signer);
-    const cUsdContract = getContract("cUSD", signer);
+    const kCurContract = getContract("CuracaoReserveToken", signer) as unknown as IErc20Token;
+    const cUsdContract = getContract("cUSD", signer) as unknown as IErc20Token;
     const proxyPoolContract = getContract("ProxyPool", signer);
+    logMessage(serviceName, `Proxy pool address is: ${proxyPoolContract.address}`);
+
     /**
      * reserve value in USD
      */
