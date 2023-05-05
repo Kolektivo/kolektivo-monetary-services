@@ -48,7 +48,7 @@ const sendBuyOrSell = async (
    * docs: https://github.com/Kolektivo/kolektivo-monetary-contracts/blob/feat/mihir/src/dex/IVault.sol#L910
    */
   const funds: IFundManagement = {
-    sender: relayerAddress,
+    sender: proxyPoolContract.address,
     fromInternalBalance: false, // always false
     recipient: relayerAddress,
     toInternalBalance: false, // always false
@@ -84,7 +84,7 @@ const sendBuyOrSell = async (
   /**
    * limit says how many tokens can Vault use on behalf of user
    */
-  const limits: Array<BigNumber> = [toWei(1000000, 18), toWei(1000000, 18)];
+  const limits: Array<BigNumber> = [toWei(10000, 18), toWei(10000, 18)];
   /**
    * deadline is by what time the swap should be executed
    */
@@ -94,12 +94,14 @@ const sendBuyOrSell = async (
    * kCUR is always the "exact" amount
    */
   if (isBuying) {
+    // const maximumAmountIn = await cUsdContract.balanceOf(relayerAddress);
+
     logMessage(serviceName, `buying kCUR (${fromWei(batchSwapStep.amount, 18)}) with cUSD`);
     // buying kCUR (out) with cUSD (in)
     return proxyPoolContract.batchSwapExactOut(
       [batchSwapStep],
       [cUsdContractAddress, kCurContractAddress],
-      batchSwapStep.amount,
+      "1338680774385975161", // TODO: figure out the right way maxTotalAmountIn (cUSD)
       funds,
       limits,
       deadline,
@@ -111,7 +113,7 @@ const sendBuyOrSell = async (
       [batchSwapStep],
       [kCurContractAddress, cUsdContractAddress],
       batchSwapStep.amount,
-      100000000, // minTotalAmountOut  TODO - figure out what this should be
+      toWei("1", 18), // TODO: figure out the right way minTotalAmountOut (cUSD)
       funds,
       limits,
       deadline,
@@ -151,7 +153,7 @@ const doit = async (
   await Promise.all([
     createAllowance(
       signer,
-      kCurContract,
+      isBuying ? cUsdContract : kCurContract,
       isBuying ? "cUSD" : "kCUR",
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isBuying ? cUsdAmount! : kCurAmount,
@@ -162,7 +164,7 @@ const doit = async (
 
     // eslint-disable-next-line prettier/prettier
     createAllowance(signer,
-      kCurContract,
+      isBuying ? cUsdContract : kCurContract,
       isBuying ? "cUSD" : "kCUR",
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       isBuying ? cUsdAmount! : kCurAmount,
