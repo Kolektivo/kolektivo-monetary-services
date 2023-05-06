@@ -1,4 +1,4 @@
-import { ITransaction } from "../globals";
+import { ITransaction } from "../helpers/contracts-helper";
 import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";

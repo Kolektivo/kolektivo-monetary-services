@@ -12,7 +12,3 @@ class Environment {
 }
 
 export const environment = new Environment();
-
-export interface ITransaction {
-  hash: string;
-}

@@ -1,5 +1,4 @@
-import { ITransaction } from "../globals";
-import { fromWei, getContract, toWei } from "../helpers/contracts-helper";
+import { fromWei, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 

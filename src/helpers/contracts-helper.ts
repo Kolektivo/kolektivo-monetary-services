@@ -1,8 +1,15 @@
 import { getContractAbi, getContractAddress } from "./abi-helper";
 
+import { TransactionReceipt, TransactionResponse } from "@ethersproject/providers";
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
 import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
 import { formatUnits, parseUnits } from "ethers/lib/utils";
+
+export interface ITransaction extends TransactionResponse {
+  transactionId: string; // Defender transaction identifier
+}
+
+export { TransactionReceipt };
 
 export const getContract = (contractName: string, signer: DefenderRelaySigner): Contract => {
   const address = getContractAddress(contractName);

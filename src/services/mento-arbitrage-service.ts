@@ -1,5 +1,5 @@
-import { ITransaction, KGUILDER_USDPRICE } from "../globals";
-import { fromWei, fromWeiToNumber, getContract, toWei } from "../helpers/contracts-helper";
+import { KGUILDER_USDPRICE } from "../globals";
+import { fromWei, fromWeiToNumber, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { IErc20Token } from "../helpers/tokens-helper";
 

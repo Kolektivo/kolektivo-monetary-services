@@ -1,6 +1,6 @@
-import { ITransaction, KGUILDER_USDPRICE } from "../globals";
+import { KGUILDER_USDPRICE } from "../globals";
 import { getContractAddress } from "../helpers/abi-helper";
-import { getContract, toWei } from "../helpers/contracts-helper";
+import { getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";

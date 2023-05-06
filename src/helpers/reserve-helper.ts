@@ -1,7 +1,5 @@
-import { ITransaction } from "../globals";
-
 import { getContractAbi, getContractAddress } from "./abi-helper";
-import { getContract } from "./contracts-helper";
+import { getContract, ITransaction } from "./contracts-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers";
 import { ethers } from "ethers";

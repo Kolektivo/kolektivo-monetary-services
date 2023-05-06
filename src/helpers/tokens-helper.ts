@@ -1,6 +1,4 @@
-import { ITransaction } from "../globals";
-
-import { fromWei, fromWeiToNumber, getContract } from "./contracts-helper";
+import { fromWei, fromWeiToNumber, getContract, ITransaction, TransactionReceipt } from "./contracts-helper";
 import { logMessage } from "./errors-helper";
 import { sendNotification } from "./notifications-helper";
 
@@ -63,7 +61,7 @@ export const createAllowance = async (
   relayerAddress: string, // always the owner
   spenderAddress: string,
   serviceName: string,
-): Promise<void> => {
+): Promise<TransactionReceipt | undefined> => {
   const relayerBalance = await tokenContract.balanceOf(relayerAddress);
 
   if (relayerBalance.lt(maxPayAmount)) {
@@ -78,7 +76,15 @@ export const createAllowance = async (
     /**
      * The Relayer will always be the owner (msg.sender)
      */
-    tx = await tokenContract.approve(spenderAddress, maxPayAmount);
+    tx = (await tokenContract.approve(spenderAddress, maxPayAmount)) as ITransaction;
+
+    /**
+     * see this: https://www.npmjs.com/package/defender-relay-client,
+     * the "Limitations" section under "ethers.js"
+     *
+     * the caller will want this to be mined before relying on the resulting allowance
+     */
+    return tx.wait(2);
   }
   logMessage(
     serviceName,
