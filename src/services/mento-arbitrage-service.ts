@@ -36,12 +36,12 @@ export const executeMentoService = async (
     const kGTotalSupply = await kGContract.totalSupply();
 
     /**
-     * using the fixed price of kG
+     * Using the fixed price of kG to help maintain that fixed
+     * equivalence between kGUilder and Guilder
      */
     const kGTotalValue = fromWeiToNumber(
       FixedNumber.fromValue(kGTotalSupply, 0, "fixed32x18")
         .mulUnsafe(FixedNumber.fromString(KGUILDER_USDPRICE.toString(), "fixed32x18"))
-        // .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // round up one wei
         .round(0)
         .toFormat("fixed32x0")
         .toString(),
@@ -57,42 +57,40 @@ export const executeMentoService = async (
     if (kCurTotalValue < kGTotalValue) {
       /**
        * then need to increase the balance of kCUR in the MentoReserve.
-       * round up cause we don't want a fractional number of tokens, and rounding down wouldn't give us enough.
        */
-      const amountOfKCur = toWei((kGTotalValue - kCurTotalValue) / kCurPrice, 18).add(1);
+      const deltaKCur = toWei((kGTotalValue - kCurTotalValue) / kCurPrice, 18);
       const relayerBalance = await kCurContract.balanceOf(relayerAddress);
 
-      if (relayerBalance.lt(amountOfKCur)) {
+      if (relayerBalance.lt(deltaKCur)) {
         throw new Error(
           `The Relayer has insufficient balance (${fromWei(
             relayerBalance,
             18,
-          )}) to send to the MentoReserve (needs: ${fromWei(amountOfKCur, 18)})`,
+          )}) to send to the MentoReserve (needs: ${fromWei(deltaKCur, 18)})`,
         );
       }
 
-      const tx: ITransaction = await kCurContract.transfer(mentoReserveContract.address, amountOfKCur);
-      logMessage(serviceName, `Transferred ${fromWei(amountOfKCur, 18)} kCur to the MentoReserve, tx hash: ${tx.hash}`);
+      const tx: ITransaction = await kCurContract.transfer(mentoReserveContract.address, deltaKCur);
+      logMessage(serviceName, `Transferred ${fromWei(deltaKCur, 18)} kCur to the MentoReserve, tx hash: ${tx.hash}`);
     } else if (kGTotalValue < kCurTotalValue) {
       /**
        * then need to decrease the balance of kCUR in the MentoReserve.
-       * round up cause we don't want a fractional number of tokens, and rounding down wouldn't give us enough.
        */
-      const amountOfKCur = toWei((kCurTotalValue - kGTotalValue) / kCurPrice, 18).add(1);
+      const deltaKCur = toWei((kCurTotalValue - kGTotalValue) / kCurPrice, 18);
       const mentoExchangeAvailable = await mentoReserveContract.getUnfrozenBalance();
 
-      if (mentoExchangeAvailable.lt(amountOfKCur)) {
+      if (mentoExchangeAvailable.lt(deltaKCur)) {
         throw new Error(
           `The MentoExchange has insufficient balance (${fromWei(
             mentoExchangeAvailable,
             18,
-          )}) to send to the Relayer (needs: ${fromWei(amountOfKCur, 18)})`,
+          )}) to send to the Relayer (needs: ${fromWei(deltaKCur, 18)})`,
         );
       }
 
-      const tx: ITransaction = await mentoReserveContract.transferExchangeGold(relayerAddress, amountOfKCur);
+      const tx: ITransaction = await mentoReserveContract.transferExchangeGold(relayerAddress, deltaKCur);
       // eslint-disable-next-line prettier/prettier
-      logMessage(serviceName, `Transferred ${fromWei(amountOfKCur, 18)} kCur from the MentoReserve, tx hash: ${tx.hash}`);
+      logMessage(serviceName, `Transferred ${fromWei(deltaKCur, 18)} kCur from the MentoReserve, tx hash: ${tx.hash}`);
     } else {
       logMessage(serviceName, `No changes required, the numbers are balanced`);
     }
