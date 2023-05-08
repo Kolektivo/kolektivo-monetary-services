@@ -47,7 +47,6 @@ export const executeMentoService = async (
     const kCurTotalValue = fromWeiToNumber(
       FixedNumber.fromValue(kCurTotalSupply, 0, "fixed32x18")
         .mulUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18"))
-        // .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // round up one wei
         .round(0)
         .toFormat("fixed32x0")
         .toString(),
@@ -110,7 +109,6 @@ export const executeMentoService = async (
       }
 
       const tx: ITransaction = await mentoReserveContract.transferExchangeGold(relayerAddress, deltaKCur);
-      // eslint-disable-next-line prettier/prettier
       logMessage(serviceName, `Transferred ${fromWei(deltaKCur, 18)} kCur from the MentoReserve, tx hash: ${tx.hash}`);
     } else {
       logMessage(serviceName, `No changes required, the numbers are balanced`);
