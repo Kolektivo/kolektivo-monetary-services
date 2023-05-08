@@ -8,6 +8,27 @@ import { FixedNumber } from "ethers";
 
 const serviceName = "Mento Service";
 
+/**
+ * What we are doing here:
+ *
+ * The USD value of kG is hardcoded (same as the 1.79 ratio of Guilder to USD) in the StablePool and by how we compute
+ * the kCUR/kG exchange rate in the service that reports the rate to the Mento SortedOracles (kg-kcur-rate-service).
+ *
+ * This Mento Arbitrage service is meant to maintain the level of backing of kCUR to kG,
+ * based on the current price of kCUR (which comes from the WeightedPool).
+ *
+ * To that end, the total value of kG needs to equal the total value of kCUR in the MentoReserve.
+ *
+ * The price of kCUR comes from the WeightedPool, the supply comes from kCUR.balanceOf(MentoReserve)
+ *
+ * The price of kG is, again, based on the 1.79, and its supply comes from kG.totalSupply
+ *
+ * We can correct any inequality by raising or lowering the supply of kCUR in the MentoReserve.
+ * Increase kCUR by sending to the MentoReserve, decrease using MentoReserve.transferExchangeGold.
+ *
+ * Since there is frequent fluctuation in the USD value of kCUR and the totalSupply of kCUR,
+ * we find that this service must frequently update the balance.
+ */
 export const executeMentoService = async (
   kCurPrice: number,
   relayerAddress: string,
