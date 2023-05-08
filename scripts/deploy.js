@@ -5,6 +5,8 @@ const { exit } = require("process");
 const { AutotaskClient } = require('defender-autotask-client');
 require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });
 
+console.info(".env file: ", process.env.DOTENV_CONFIG_PATH);
+
 const srcPath = "./src/abis";
 const destPath = "./dist/abis";
 const distPath = "./dist";

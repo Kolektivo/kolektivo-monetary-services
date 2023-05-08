@@ -40,9 +40,9 @@ export const fetchAbis = (): void => {
      * note you should be able to run the production build locally if you have "production=1" in your environment
      */
     try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
       abis = require(`../abis/${
-        !environment.runningLocally || process.env.production ? "celo.json" : "celo-test.json"
+        environment.runningLocally || !process.env.production ? "celo-test.json" : "celo.json"
       }`);
     } catch {
       // abis = require("../abis/celo-test.json");
