@@ -1,5 +1,4 @@
-import { ITransaction } from "../helpers/contracts-helper";
-import { fromWeiToNumber, getContract } from "../helpers/contracts-helper";
+import { fromWeiToNumber, getContract, ITransaction } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";
 
@@ -77,7 +76,7 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
     logMessage(serviceName, `Reporting ${kcurPrice} to kCUR Oracle`);
 
     const tx: ITransaction = await updateOracle(kCurOracleContract, kcurPrice);
-    await tx.wait(2); // await because other services depend on this being up-to-date
+    await tx.wait(); // await because other services depend on this being up-to-date
     logMessage(serviceName, `Updated kCUR Oracle, tx hash: ${tx.hash}`);
   } catch (ex) {
     serviceThrewException(serviceName, ex);

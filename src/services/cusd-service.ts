@@ -34,7 +34,7 @@ export const executeCusdService = async (
     logMessage(serviceName, `Reporting ${cusdPrice} to cUSD Oracle`);
 
     const tx: ITransaction = await updateOracle(cUsdOracleContract, cusdPrice);
-    await tx.wait(2); // await because other services depend on this being up-to-date
+    await tx.wait(); // await because other services depend on this being up-to-date
     logMessage(serviceName, `Updated cUSD Oracle, tx hash: ${tx.hash}`);
     return cusdPrice;
   } catch (ex) {

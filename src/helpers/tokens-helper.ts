@@ -84,7 +84,7 @@ export const createAllowance = async (
      *
      * the caller will want this to be mined before relying on the resulting allowance
      */
-    txReceipt = await tx.wait(2);
+    txReceipt = await tx.wait();
   }
   logMessage(
     serviceName,
