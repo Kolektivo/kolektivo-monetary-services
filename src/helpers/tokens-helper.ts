@@ -1,4 +1,4 @@
-import { fromWei, fromWeiToNumber, getContract, ITransaction, TransactionReceipt } from "./contracts-helper";
+import { fromWei, fromWeiToNumber, getContract, ITransaction, ITransactionReceipt } from "./contracts-helper";
 import { logMessage } from "./errors-helper";
 import { sendNotification } from "./notifications-helper";
 
@@ -61,7 +61,7 @@ export const createAllowance = async (
   relayerAddress: string, // always the owner
   spenderAddress: string,
   serviceName: string,
-): Promise<TransactionReceipt | undefined> => {
+): Promise<ITransactionReceipt | undefined> => {
   const relayerBalance = await tokenContract.balanceOf(relayerAddress);
 
   if (relayerBalance.lt(maxPayAmount)) {
@@ -70,13 +70,13 @@ export const createAllowance = async (
     );
   }
 
-  let tx: ITransaction | undefined;
+  let txReceipt: ITransactionReceipt | undefined;
   const currentAllowance = await tokenContract.allowance(relayerAddress, spenderAddress);
   if (currentAllowance.lt(maxPayAmount)) {
     /**
      * The Relayer will always be the owner (msg.sender)
      */
-    tx = (await tokenContract.approve(spenderAddress, maxPayAmount)) as ITransaction;
+    const tx = (await tokenContract.approve(spenderAddress, maxPayAmount)) as ITransaction;
 
     /**
      * see this: https://www.npmjs.com/package/defender-relay-client,
@@ -84,13 +84,16 @@ export const createAllowance = async (
      *
      * the caller will want this to be mined before relying on the resulting allowance
      */
-    return tx.wait(2);
+    txReceipt = await tx.wait(2);
   }
   logMessage(
     serviceName,
     `Set allowance of ${fromWei(
       maxPayAmount,
       18,
-    )} of ${tokenContractName} from Relayer to ${spenderAddress}, tx hash: ${tx?.hash ?? "no tx needed"}`,
+    )} of ${tokenContractName} from Relayer to ${spenderAddress}, tx hash: ${
+      txReceipt?.transactionHash ?? "no tx needed"
+    }`,
   );
+  return txReceipt;
 };

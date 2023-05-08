@@ -77,8 +77,8 @@ export const executeKCurService = async (kcurPrice: number, signer: DefenderRela
     logMessage(serviceName, `Reporting ${kcurPrice} to kCUR Oracle`);
 
     const tx: ITransaction = await updateOracle(kCurOracleContract, kcurPrice);
+    await tx.wait(2); // await because other services depend on this being up-to-date
     logMessage(serviceName, `Updated kCUR Oracle, tx hash: ${tx.hash}`);
-    // const mined = await tx.wait();
   } catch (ex) {
     serviceThrewException(serviceName, ex);
   }

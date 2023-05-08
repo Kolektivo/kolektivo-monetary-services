@@ -1,5 +1,5 @@
-import { ITransaction } from "../helpers/contracts-helper";
 import { getTokenGeckoPrice } from "../helpers/coingecko-helper";
+import { ITransaction } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { getOracleForToken, getReserveContract, updateOracle } from "../helpers/reserve-helper";
 
@@ -33,9 +33,9 @@ export const executeCusdService = async (
     logMessage(serviceName, "cUSD Oracle address: ", cUsdOracleContract.address);
     logMessage(serviceName, `Reporting ${cusdPrice} to cUSD Oracle`);
 
-    const txcUsd: ITransaction = await updateOracle(cUsdOracleContract, cusdPrice);
-    logMessage(serviceName, `Updated cUSD Oracle, tx hash: ${txcUsd.hash}`);
-    // const mined = await tx.wait();
+    const tx: ITransaction = await updateOracle(cUsdOracleContract, cusdPrice);
+    await tx.wait(2); // await because other services depend on this being up-to-date
+    logMessage(serviceName, `Updated cUSD Oracle, tx hash: ${tx.hash}`);
     return cusdPrice;
   } catch (ex) {
     serviceThrewException(serviceName, ex);

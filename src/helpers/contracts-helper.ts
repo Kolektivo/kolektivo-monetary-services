@@ -9,7 +9,7 @@ export interface ITransaction extends TransactionResponse {
   transactionId: string; // Defender transaction identifier
 }
 
-export { TransactionReceipt };
+export { TransactionReceipt as ITransactionReceipt };
 
 export const getContract = (contractName: string, signer: DefenderRelaySigner): Contract => {
   const address = getContractAddress(contractName);

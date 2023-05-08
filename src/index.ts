@@ -82,8 +82,9 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
     throw new Error("Cannot proceed, the remaining services depend on the kCur price, which could not be obtained");
   }
 
-  //await Promise.all([
   await executeKCurService(kCurPrice, signer);
+
+  //await Promise.all([
   await executekGkCURService(kCurPrice, signer);
   await executeMentoService(kCurPrice, relayerInfo.address, signer);
   await executeFloorAndCeilingService(cUsdPrice, kCurPrice, relayerInfo.address, signer);
