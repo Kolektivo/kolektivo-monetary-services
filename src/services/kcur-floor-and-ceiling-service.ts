@@ -31,12 +31,15 @@ const sendBuyOrSell = async (
   relayerAddress: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxyPoolContract: any,
-  kCurContractAddress: string,
-  cUsdContractAddress: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  kCurContract: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  cUsdContract: any,
   /**
    * amount of kCUR to buy or sell
    */
-  amount: BigNumber,
+  kCurAmount: BigNumber,
+  kCurPrice: number,
   /**
    * if true then we're buying kCUR with cUSD
    * if false then we're selling kCUR for cUSD
@@ -74,7 +77,7 @@ const sendBuyOrSell = async (
     /**
      * amount of kCUR we are buying or selling.
      */
-    amount: amount,
+    amount: kCurAmount,
     /**
      * always empty string
      */
@@ -99,8 +102,9 @@ const sendBuyOrSell = async (
     // buying kCUR (out) with cUSD (in)
     return proxyPoolContract.batchSwapExactOut(
       [batchSwapStep],
-      [cUsdContractAddress, kCurContractAddress],
-      "1338680774385975161", // TODO: figure out the right way maxTotalAmountIn (cUSD)
+      [cUsdContract.address, kCurContract.address],
+      // maxTotalAmountIn (# of cUSD)
+      await cUsdContract.balanceOf(relayerAddress),
       funds,
       limits,
       deadline,
@@ -110,9 +114,10 @@ const sendBuyOrSell = async (
     // selling kCUR (in) to get cUSD (out)
     return proxyPoolContract.batchSwapExactIn(
       [batchSwapStep],
-      [kCurContractAddress, cUsdContractAddress],
-      batchSwapStep.amount,
-      toWei("1", 18), // TODO: figure out the right way minTotalAmountOut (cUSD)
+      [kCurContract.address, cUsdContract.address],
+      batchSwapStep.amount, // yes, is the same as batchSwapStep.amount
+      // minTotalAmountOut (# of cUSD)
+      computeValueOfDelta(kCurAmount, kCurPrice),
       funds,
       limits,
       deadline,
@@ -130,6 +135,7 @@ const doit = async (
    * amount of kCUR to receive when buying or to pay when selling
    */
   kCurAmount: BigNumber,
+  kCurPrice: number,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   kCurContract: IErc20Token,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -177,9 +183,10 @@ const doit = async (
     signer,
     relayerAddress,
     proxyPoolContract,
-    kCurContract.address,
-    cUsdContract.address,
+    kCurContract,
+    cUsdContract,
     kCurAmount,
+    kCurPrice,
     isBuying,
   );
 };
@@ -202,7 +209,7 @@ const checkReserveLimits = (
   // checks following
   // current floor price <= current kCur price
   // below condition is a derived condition which in the end checks same logic
-  if (backingRatio < BPS) {
+  if (backingRatio > BPS) {
     return [true, true];
   }
 
@@ -211,7 +218,7 @@ const checkReserveLimits = (
   // current kCur price > current floor price * ceiling multiplier
   // below condition is a derived condition which in the end checks the same logic
   // ceilingMultiplier -> if 3.5 = 35000
-  if (backingRatio * ceilingMultiplier > BPS * BPS) {
+  if (backingRatio * ceilingMultiplier < BPS * BPS) {
     return [true, false];
   }
 
@@ -235,6 +242,17 @@ const computeDelta = async (backingRatio: number, forFloor: boolean, kCurContrac
     FixedNumber.fromString(delta.toString(), "fixed32x18")
       .mulUnsafe(kCurTotalSupply)
       .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // just to be safe
+      .round(0)
+      .toFormat("fixed32x0")
+      .toString(),
+  );
+};
+
+const computeValueOfDelta = (deltaBG: BigNumber, kCurPrice: number): BigNumber => {
+  const delta = FixedNumber.fromValue(deltaBG, 0, "fixed32x18");
+  return BigNumber.from(
+    FixedNumber.fromString(kCurPrice.toString(), "fixed32x18")
+      .mulUnsafe(delta)
       .round(0)
       .toFormat("fixed32x0")
       .toString(),
@@ -283,7 +301,16 @@ export const executeFloorAndCeilingService = async (
          */
         const delta = await computeDelta(backingRatio, true, kCurContract);
 
-        const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+        const tx = await doit(
+          false,
+          delta,
+          kCurPrice,
+          kCurContract,
+          cUsdContract,
+          relayerAddress,
+          proxyPoolContract,
+          signer,
+        );
 
         logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
       } else {
@@ -297,7 +324,16 @@ export const executeFloorAndCeilingService = async (
          */
         const delta = await computeDelta(backingRatio, false, kCurContract);
 
-        const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+        const tx = await doit(
+          true,
+          delta,
+          kCurPrice,
+          kCurContract,
+          cUsdContract,
+          relayerAddress,
+          proxyPoolContract,
+          signer,
+        );
 
         logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
       }
