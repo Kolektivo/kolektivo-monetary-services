@@ -184,6 +184,55 @@ const doit = async (
   );
 };
 
+const BPS = 10000;
+
+/**
+ * @param backingRatio - not / BPS
+ * @param ceilingMultiplier - not / BPS
+ * @returns
+ * [0]: a limit is breached
+ * [1]: floor is breached (else if [0] then ceiling)
+ */
+const checkReserveLimits = (
+  backingRatio: number,
+  ceilingMultiplier: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+): Array<boolean> => {
+  // checks following
+  // current floor price <= current kCur price
+  // below condition is a derived condition which in the end checks same logic
+  if (backingRatio > BPS) {
+    return [true, true];
+  }
+
+  // Ceiling
+  // check following
+  // current kCur price > current floor price * ceiling multiplier
+  // below condition is a derived condition which in the end checks the same logic
+  // ceilingMultiplier -> if 3.5 = 35000
+  if (backingRatio * ceilingMultiplier < BPS * BPS) {
+    return [true, false];
+  }
+
+  return [false, false];
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getFloor = async (reserveValueBG: BigNumber, kCurContract: any): Promise<number> => {
+  const reserveValue = FixedNumber.fromValue(reserveValueBG, 0, "fixed32x18");
+  const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
+
+  if (kCurTotalSupply.isZero()) {
+    throw new Error("kCur totalSupply is zero");
+  }
+  return reserveValue.divUnsafe(kCurTotalSupply).toUnsafeFloat();
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const getCeiling = (ceilingMultiplier: number, floor: number): number => {
+  return floor * (ceilingMultiplier / BPS);
+};
+
 export const executeFloorAndCeilingService = async (
   cUsdPrice: number,
   kCurPrice: number,
@@ -198,62 +247,43 @@ export const executeFloorAndCeilingService = async (
     const cUsdContract = getContract("cUSD", signer) as unknown as IErc20Token;
     const proxyPoolContract = getContract("ProxyPool", signer);
     logMessage(serviceName, `Proxy pool address is: ${proxyPoolContract.address}`);
+    const reserveStatus = await reserveContract.reserveStatus();
+    const ceilingMultiplier = Number(await proxyPoolContract.ceilingMultiplier());
 
-    /**
-     * reserve value in USD
-     */
-    const reserveValue = FixedNumber.fromValue((await reserveContract.reserveStatus())[0], 0, "fixed32x18");
-    const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
+    logMessage(`ceilingMultiplier: ${ceilingMultiplier / BPS}`);
 
-    if (kCurTotalSupply.isZero()) {
-      throw new Error("kCur totalSupply is zero");
-    }
-    /** floor in USD */
-    const floor: number = reserveValue.divUnsafe(kCurTotalSupply).toUnsafeFloat();
-    logMessage(serviceName, `reserve floor: ${floor.toString()}`);
-    /**
-     * multiplier as a number
-     */
-    const ceilingMultiplier: number = FixedNumber.fromValue(
-      await proxyPoolContract.ceilingMultiplier(),
-      0,
-      "fixed32x18",
-    )
-      .divUnsafe(FixedNumber.fromString("10000", "fixed32x18"))
-      .toUnsafeFloat();
-    /**
-     * ceiling in USD
-     */
-    const ceiling = floor * ceilingMultiplier;
-    logMessage(serviceName, `reserve ceiling: ${ceiling}`);
+    const breachState = checkReserveLimits(Number(reserveStatus[2]), ceilingMultiplier);
 
     // const reserveToken = await proxyPoolContract.reserveToken();
     // const pairToken = await proxyPoolContract.pairToken();
 
-    /**
-     * TODO: this logic makes no sense.  Gotta find better logic
-     */
+    const floor = await getFloor(reserveStatus[0], kCurContract);
+    const ceiling = getCeiling(ceilingMultiplier, floor);
 
     /**
      * Is below the floor.  Gotta buy kCUR, using cUSD
      */
-    if (kCurPrice < floor) {
-      logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
+    if (breachState[0]) {
+      if (breachState[1]) {
+        /** floor in USD */
+        logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
+        const delta = toWei((floor - kCurPrice) / kCurPrice, 18).add(1);
+        const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
 
-      const delta = toWei((floor - kCurPrice) / kCurPrice, 18).add(1);
-      const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+        logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
+        /**
+         * Is above the ceiling, gotta sell kCUR, for cUSD
+         */
+      } else {
+        logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
 
-      logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
-      /**
-       * Is above the ceiling, gotta sell kCUR, for cUSD
-       */
-    } else if (kCurPrice > ceiling) {
-      logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
+        const delta = toWei((kCurPrice - ceiling) / kCurPrice, 18).add(1); // add just a little buffer
+        const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
 
-      const delta = toWei((kCurPrice - ceiling) / kCurPrice, 18).add(1); // add just a little buffer
-      const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
-
-      logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
+        logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
+      }
+    } else {
+      logMessage(serviceName, `kCur is within range ${kCurPrice}: (${floor} to ${ceiling})`);
     }
   } catch (ex) {
     serviceThrewException(serviceName, ex);
