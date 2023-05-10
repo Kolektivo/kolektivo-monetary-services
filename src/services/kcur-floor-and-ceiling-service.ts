@@ -3,7 +3,7 @@ import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber } from "ethers";
+import { BigNumber, FixedNumber } from "ethers";
 import { BytesLike } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
@@ -202,7 +202,7 @@ const checkReserveLimits = (
   // checks following
   // current floor price <= current kCur price
   // below condition is a derived condition which in the end checks same logic
-  if (backingRatio > BPS) {
+  if (backingRatio < BPS) {
     return [true, true];
   }
 
@@ -211,7 +211,7 @@ const checkReserveLimits = (
   // current kCur price > current floor price * ceiling multiplier
   // below condition is a derived condition which in the end checks the same logic
   // ceilingMultiplier -> if 3.5 = 35000
-  if (backingRatio * ceilingMultiplier < BPS * BPS) {
+  if (backingRatio * ceilingMultiplier > BPS * BPS) {
     return [true, false];
   }
 
@@ -226,6 +226,19 @@ const getFloor = (reserveBacking: number, kCurPrice: number): number => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getCeiling = (ceilingMultiplier: number, floor: number): number => {
   return floor * (ceilingMultiplier / BPS);
+};
+
+const computeDelta = async (backingRatio: number, forFloor: boolean, kCurContract: any): Promise<BigNumber> => {
+  const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
+  const delta = (forFloor ? BPS - backingRatio : backingRatio - BPS) / BPS;
+  return BigNumber.from(
+    FixedNumber.fromString(delta.toString(), "fixed32x18")
+      .mulUnsafe(kCurTotalSupply)
+      .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // just to be safe
+      .round(0)
+      .toFormat("fixed32x0")
+      .toString(),
+  );
 };
 
 export const executeFloorAndCeilingService = async (
@@ -246,7 +259,7 @@ export const executeFloorAndCeilingService = async (
     const backingRatio = Number(reserveStatus[2]);
 
     logMessage(`ceilingMultiplier: ${ceilingMultiplier / BPS}`);
-    logMessage(`backingRatio: ${backingRatio}`);
+    logMessage(`backingRatio: ${backingRatio / BPS}`);
 
     const breachState = checkReserveLimits(backingRatio, ceilingMultiplier);
 
@@ -254,28 +267,39 @@ export const executeFloorAndCeilingService = async (
     // const pairToken = await proxyPoolContract.pairToken();
 
     const floor = getFloor(backingRatio, kCurPrice);
+    logMessage(`floor: ${floor}`);
     const ceiling = getCeiling(ceilingMultiplier, floor);
+    logMessage(`ceiling: ${ceiling}`);
 
     if (breachState[0]) {
       if (breachState[1]) {
         /**
          * Is below the floor.  Gotta buy kCUR, using cUSD
          */
-        logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
-        const delta = toWei((floor - kCurPrice) / kCurPrice, 18).add(1);
-        const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+        logMessage(serviceName, `The floor has been breached`);
+        /**
+         * delta is how many kCUR we should be burning (selling) to bring the treasury value on par with
+         * the value of the total supply of kCUR.
+         */
+        const delta = await computeDelta(backingRatio, true, kCurContract);
 
-        logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
+        const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+
+        logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
       } else {
         /**
          * Is above the ceiling, gotta sell kCUR, for cUSD
          */
-        logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
+        logMessage(serviceName, `The ceiling has been breached`);
+        /**
+         * delta is how many kCUR we should be minting (buying) to bring the treasury value on par with
+         * the value of the total supply of kCUR.
+         */
+        const delta = await computeDelta(backingRatio, false, kCurContract);
 
-        const delta = toWei((kCurPrice - ceiling) / kCurPrice, 18).add(1); // add just a little buffer
-        const tx = await doit(false, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
+        const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
 
-        logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
+        logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
       }
     } else {
       logMessage(serviceName, `kCur is within range ${kCurPrice}: (${floor} to ${ceiling})`);

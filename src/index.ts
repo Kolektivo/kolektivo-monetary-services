@@ -10,8 +10,6 @@ import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
 import { executeFloorAndCeilingService } from "./services/kcur-floor-and-ceiling-service";
 import { executeKCurService, getKCurPrice } from "./services/kcur-service";
-import { executekGkCURService } from "./services/kg-kcur-rate-service";
-import { executeMentoService } from "./services/mento-arbitrage-service";
 import { environment } from "./globals";
 
 import { Relayer } from "defender-relay-client";
@@ -85,9 +83,9 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
   await executeKCurService(kCurPrice, signer);
 
   //await Promise.all([
-  await executekGkCURService(kCurPrice, signer);
-  await executeMentoService(kCurPrice, relayerInfo.address, signer);
-  await executeFloorAndCeilingService(cUsdPrice, kCurPrice, relayerInfo.address, signer);
+  // await executekGkCURService(kCurPrice, signer);
+  // await executeMentoService(kCurPrice, relayerInfo.address, signer);
+  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
   //]);
 
   if (failedStatus) {
