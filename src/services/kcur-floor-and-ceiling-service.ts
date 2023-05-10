@@ -3,7 +3,7 @@ import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber, FixedNumber } from "ethers";
+import { BigNumber } from "ethers";
 import { BytesLike } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
@@ -187,6 +187,7 @@ const doit = async (
 const BPS = 10000;
 
 /**
+ * backingRatio is (reserveValuation * BPS) / supplyValuation
  * @param backingRatio - not / BPS
  * @param ceilingMultiplier - not / BPS
  * @returns
@@ -218,14 +219,8 @@ const checkReserveLimits = (
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const getFloor = async (reserveValueBG: BigNumber, kCurContract: any): Promise<number> => {
-  const reserveValue = FixedNumber.fromValue(reserveValueBG, 0, "fixed32x18");
-  const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
-
-  if (kCurTotalSupply.isZero()) {
-    throw new Error("kCur totalSupply is zero");
-  }
-  return reserveValue.divUnsafe(kCurTotalSupply).toUnsafeFloat();
+const getFloor = (reserveBacking: number, kCurPrice: number): number => {
+  return (reserveBacking / BPS) * kCurPrice;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -234,7 +229,6 @@ const getCeiling = (ceilingMultiplier: number, floor: number): number => {
 };
 
 export const executeFloorAndCeilingService = async (
-  cUsdPrice: number,
   kCurPrice: number,
   relayerAddress: string,
   signer: DefenderRelaySigner,
@@ -249,15 +243,17 @@ export const executeFloorAndCeilingService = async (
     logMessage(serviceName, `Proxy pool address is: ${proxyPoolContract.address}`);
     const reserveStatus = await reserveContract.reserveStatus();
     const ceilingMultiplier = Number(await proxyPoolContract.ceilingMultiplier());
+    const backingRatio = Number(reserveStatus[2]);
 
     logMessage(`ceilingMultiplier: ${ceilingMultiplier / BPS}`);
+    logMessage(`backingRatio: ${backingRatio}`);
 
-    const breachState = checkReserveLimits(Number(reserveStatus[2]), ceilingMultiplier);
+    const breachState = checkReserveLimits(backingRatio, ceilingMultiplier);
 
     // const reserveToken = await proxyPoolContract.reserveToken();
     // const pairToken = await proxyPoolContract.pairToken();
 
-    const floor = await getFloor(reserveStatus[0], kCurContract);
+    const floor = getFloor(backingRatio, kCurPrice);
     const ceiling = getCeiling(ceilingMultiplier, floor);
 
     if (breachState[0]) {
