@@ -260,21 +260,20 @@ export const executeFloorAndCeilingService = async (
     const floor = await getFloor(reserveStatus[0], kCurContract);
     const ceiling = getCeiling(ceilingMultiplier, floor);
 
-    /**
-     * Is below the floor.  Gotta buy kCUR, using cUSD
-     */
     if (breachState[0]) {
       if (breachState[1]) {
-        /** floor in USD */
+        /**
+         * Is below the floor.  Gotta buy kCUR, using cUSD
+         */
         logMessage(serviceName, `kCur price ${kCurPrice} is below the floor ${floor}`);
         const delta = toWei((floor - kCurPrice) / kCurPrice, 18).add(1);
         const tx = await doit(true, delta, kCurContract, cUsdContract, relayerAddress, proxyPoolContract, signer);
 
         logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
+      } else {
         /**
          * Is above the ceiling, gotta sell kCUR, for cUSD
          */
-      } else {
         logMessage(serviceName, `kCur price ${kCurPrice} is above the ceiling ${ceiling.toString()}`);
 
         const delta = toWei((kCurPrice - ceiling) / kCurPrice, 18).add(1); // add just a little buffer
