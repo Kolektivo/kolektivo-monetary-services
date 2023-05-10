@@ -235,9 +235,15 @@ const getCeiling = (ceilingMultiplier: number, floor: number): number => {
   return floor * (ceilingMultiplier / BPS);
 };
 
-const computeDelta = async (backingRatio: number, forFloor: boolean, kCurContract: any): Promise<BigNumber> => {
+const computeDelta = async (
+  priceLimit: number, // floor or ceiling
+  kCurPrice: number,
+  forFloor: boolean,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  kCurContract: any,
+): Promise<BigNumber> => {
   const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
-  const delta = (forFloor ? BPS - backingRatio : backingRatio - BPS) / BPS;
+  const delta = forFloor ? priceLimit - kCurPrice : kCurPrice - priceLimit;
   return BigNumber.from(
     FixedNumber.fromString(delta.toString(), "fixed32x18")
       .mulUnsafe(kCurTotalSupply)
@@ -299,7 +305,7 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be burning (selling) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = await computeDelta(backingRatio, true, kCurContract);
+        const delta = await computeDelta(floor, kCurPrice, true, kCurContract);
 
         const tx = await doit(
           false,
@@ -322,7 +328,7 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be minting (buying) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = await computeDelta(backingRatio, false, kCurContract);
+        const delta = await computeDelta(ceiling, kCurPrice, false, kCurContract);
 
         const tx = await doit(
           true,
