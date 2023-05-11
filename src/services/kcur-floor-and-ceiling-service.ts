@@ -1,4 +1,4 @@
-import { fromWei, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
+import { fromWei, fromWeiToNumber, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
@@ -237,6 +237,16 @@ const getCeiling = (ceilingMultiplier: number, floor: number): number => {
   return floor * (ceilingMultiplier / BPS);
 };
 
+/**
+ * compute the number of kCUR needed to buy or sell.
+ * get the needed $ to make up the difference
+ *
+ * @param priceLimit
+ * @param kCurPrice
+ * @param kCurTotalSupply
+ * @param forFloor
+ * @returns
+ */
 const computeDelta = (
   priceLimit: number, // floor or ceiling
   kCurPrice: number,
@@ -314,6 +324,7 @@ export const executeFloorAndCeilingService = async (
 
     if (breachState[0]) {
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
+      logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
 
       if (breachState[1]) {
         /**
