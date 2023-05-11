@@ -1,5 +1,3 @@
-import { environment } from "../globals";
-
 import { logMessage } from "./errors-helper";
 
 export interface IContractInfo {
@@ -41,9 +39,8 @@ export const fetchAbis = (): void => {
      */
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      abis = require(`../abis/${
-        environment.runningLocally || !process.env.production ? "celo-test.json" : "celo.json"
-      }`);
+      logMessage("Abi Helper: ", `using ABIs: ${process.env.production ? "celo.json" : "celo-test.json"}`);
+      abis = require(`../abis/${process.env.production ? "celo.json" : "celo-test.json"}`);
     } catch {
       // abis = require("../abis/celo-test.json");
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
