@@ -29,7 +29,7 @@ export interface IAutoRelayHandler {
 let abis: IContractInfosJson;
 let sharedAbis: ISharedContractInfos;
 
-export const fetchAbis = (): void => {
+export const fetchAbis = (event: IAutoRelayHandler): void => {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!abis) {
     logMessage("Abi Helper", "fetching abis");
@@ -38,11 +38,13 @@ export const fetchAbis = (): void => {
      * note you should be able to run the production build locally if you have "production=1" in your environment
      */
     try {
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      const isProduction = process.env.production || (event.secrets.IsProduction ?? false);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      logMessage("Abi Helper: ", `using ABIs: ${process.env.production ? "celo.json" : "celo-test.json"}`);
-      abis = require(`../abis/${process.env.production ? "celo.json" : "celo-test.json"}`);
+      logMessage("Abi Helper: ", `using ABIs: ${isProduction ? "celo.json" : "celo-test.json"}`);
+      abis = require(`../abis/${isProduction ? "celo.json" : "celo-test.json"}`);
+      abis = require("../abis/celo.json");
     } catch {
-      // abis = require("../abis/celo-test.json");
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
       throw new Error("abis not found");
     }

@@ -42,7 +42,7 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
 
   initializeNotifications(context?.notificationClient);
 
-  fetchAbis();
+  fetchAbis(event);
 
   const relayer = new Relayer(event);
   const relayerInfo: RelayerModel = await relayer.getRelayer();
