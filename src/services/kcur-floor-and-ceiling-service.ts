@@ -151,8 +151,10 @@ const doit = async (
   const vault = getContract("Vault", signer);
   /**
    * tell token to allow the proxy contract to spend token on behalf of the Relayer
-   * Since we can't know the amount of cUSD in advance (kCUr is always the fixed amount int he exchange),
+   * Since we can't know the amount of cUSD in advance (kCUr is always the fixed amount in the exchange),
    * we will set the allowance the full balance of cUSD in relayer (maybe is better than unlimited, wishful thinking).
+   *
+   * cUsdAmount isn't used if !isBuying
    */
   const cUsdAmount = isBuying ? await cUsdContract.balanceOf(relayerAddress) : null;
   await Promise.all([
@@ -235,18 +237,17 @@ const getCeiling = (ceilingMultiplier: number, floor: number): number => {
   return floor * (ceilingMultiplier / BPS);
 };
 
-const computeDelta = async (
+const computeDelta = (
   priceLimit: number, // floor or ceiling
   kCurPrice: number,
+  kCurTotalSupply: BigNumber,
   forFloor: boolean,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  kCurContract: any,
-): Promise<BigNumber> => {
-  const kCurTotalSupply = FixedNumber.fromValue(await kCurContract.totalSupply(), 0, "fixed32x18");
+): BigNumber => {
   const delta = forFloor ? priceLimit - kCurPrice : kCurPrice - priceLimit;
+
   return BigNumber.from(
     FixedNumber.fromString(delta.toString(), "fixed32x18")
-      .mulUnsafe(kCurTotalSupply)
+      .mulUnsafe(FixedNumber.fromValue(kCurTotalSupply, 0, "fixed32x18"))
       .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // just to be safe
       .round(0)
       .toFormat("fixed32x0")
@@ -265,6 +266,22 @@ const computeValueOfDelta = (deltaBG: BigNumber, kCurPrice: number): BigNumber =
   );
 };
 
+const getkCurTotalSupply = (totalSupplyValue: BigNumber, kCurPrice: number): BigNumber => {
+  return BigNumber.from(
+    FixedNumber.fromValue(totalSupplyValue, 0, "fixed32x18")
+      .divUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18"))
+      .round(0)
+      .toFormat("fixed32x0")
+      .toString(),
+  );
+};
+
+/**
+ * @param kCurPrice this relies on the Reserve.reserveStatus being up-to-date with
+ *                  the price having been reported to the Reserve kCur Oracle by the kcur-service.
+ * @param relayerAddress
+ * @param signer
+ */
 export const executeFloorAndCeilingService = async (
   kCurPrice: number,
   relayerAddress: string,
@@ -296,6 +313,8 @@ export const executeFloorAndCeilingService = async (
     logMessage(`ceiling: ${ceiling}`);
 
     if (breachState[0]) {
+      const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
+
       if (breachState[1]) {
         /**
          * Is below the floor.  Gotta buy kCUR, using cUSD
@@ -305,7 +324,7 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be burning (selling) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = await computeDelta(floor, kCurPrice, true, kCurContract);
+        const delta = computeDelta(floor, kCurPrice, totalSupply, true);
 
         const tx = await doit(
           false,
@@ -328,7 +347,7 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be minting (buying) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = await computeDelta(ceiling, kCurPrice, false, kCurContract);
+        const delta = computeDelta(ceiling, kCurPrice, totalSupply, false);
 
         const tx = await doit(
           true,
