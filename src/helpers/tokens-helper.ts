@@ -66,7 +66,7 @@ export const createAllowance = async (
 
   if (relayerBalance.lt(maxPayAmount)) {
     throw new Error(
-      `Relayer is lacking the sufficient funds to pay ${maxPayAmount.toString()} of ${tokenContractName}`,
+      `Relayer is lacking the sufficient funds to pay ${fromWeiToNumber(maxPayAmount, 18)} of ${tokenContractName}`,
     );
   }
 
