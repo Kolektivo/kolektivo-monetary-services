@@ -299,8 +299,8 @@ export const executeFloorAndCeilingService = async (
     const ceilingMultiplier = Number(await proxyPoolContract.ceilingMultiplier());
     const backingRatio = Number(reserveStatus[2]);
 
-    logMessage(`ceilingMultiplier: ${ceilingMultiplier / BPS}`);
-    logMessage(`backingRatio: ${backingRatio / BPS}`);
+    logMessage(serviceName, `ceilingMultiplier: ${ceilingMultiplier / BPS}`);
+    logMessage(serviceName, `backingRatio: ${backingRatio / BPS}`);
 
     const breachState = checkReserveLimits(backingRatio, ceilingMultiplier);
 
@@ -308,9 +308,9 @@ export const executeFloorAndCeilingService = async (
     // const pairToken = await proxyPoolContract.pairToken();
 
     const floor = getFloor(backingRatio, kCurPrice);
-    logMessage(`floor: ${floor}`);
+    logMessage(serviceName, `floor: ${floor}`);
     const ceiling = getCeiling(ceilingMultiplier, floor);
-    logMessage(`ceiling: ${ceiling}`);
+    logMessage(serviceName, `ceiling: ${ceiling}`);
 
     if (breachState[0]) {
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
