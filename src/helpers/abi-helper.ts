@@ -39,7 +39,7 @@ export const fetchAbis = (event: IAutoRelayHandler): void => {
      */
     try {
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-      const isProduction = process.env.production || (event.secrets.IsProduction ?? false);
+      const isProduction = process.env.production ?? event.secrets.IsProduction ?? false;
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       logMessage("Abi Helper: ", `using ABIs: ${isProduction ? "celo.json" : "celo-test.json"}`);
       abis = require(`../abis/${isProduction ? "celo.json" : "celo-test.json"}`);
