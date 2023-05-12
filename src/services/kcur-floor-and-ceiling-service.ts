@@ -335,7 +335,7 @@ export const executeFloorAndCeilingService = async (
 
       if (breachState[1]) {
         /**
-         * Is below the floor.  Gotta buy kCUR, using cUSD
+         * Is below the floor.
          */
         logMessage(serviceName, `The floor has been breached`);
         /**
@@ -344,6 +344,8 @@ export const executeFloorAndCeilingService = async (
          */
         const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, true);
 
+        /**
+         * don't invoke this for now, as the logic is not fully worked out
         const tx = await doit(
           false,
           delta,
@@ -356,9 +358,10 @@ export const executeFloorAndCeilingService = async (
         );
 
         logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
+         */
       } else {
         /**
-         * Is above the ceiling, gotta sell kCUR, for cUSD
+         * Is above the ceiling
          */
         logMessage(serviceName, `The ceiling has been breached`);
         /**
@@ -367,6 +370,8 @@ export const executeFloorAndCeilingService = async (
          */
         const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, false);
 
+        /**
+         * don't invoke this for now, as the logic is not fully worked out
         const tx = await doit(
           true,
           delta,
@@ -379,6 +384,7 @@ export const executeFloorAndCeilingService = async (
         );
 
         logMessage(serviceName, `Bought ${fromWei(delta, 18)} kCUR with cUSD, tx hash: ${tx.hash}`);
+        */
       }
     } else {
       logMessage(serviceName, `kCur is within range ${kCurPrice}: (${floor} to ${ceiling})`);
