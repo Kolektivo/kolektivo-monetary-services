@@ -1,6 +1,6 @@
 import { fromWei, fromWeiToNumber, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
-import { sqrt } from "../helpers/fixedNumber";
+import { sqrt } from "../helpers/fixednumber-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
