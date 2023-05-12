@@ -345,7 +345,8 @@ export const executeFloorAndCeilingService = async (
     const ceiling = getCeiling(ceilingMultiplier, floor);
     logMessage(serviceName, `ceiling: ${ceiling}`);
 
-    if (breachState[0]) { // then there is a breach
+    if (breachState[0]) {
+      // then there is a breach
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
       logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
       logMessage(serviceName, `Reserve value: ${fromWeiToNumber(reserveStatus[0], 18)}`);
