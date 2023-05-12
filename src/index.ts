@@ -4,7 +4,7 @@
  */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import { fetchAbis, IAutoRelayHandler } from "./helpers/abi-helper";
-import { clearFailedStatus, failedStatus, logMessage, logWarning } from "./helpers/errors-helper";
+import { clearFailedStatus, failedStatus, logError, logMessage, logWarning } from "./helpers/errors-helper";
 import { initializeNotifications, INotificationClient } from "./helpers/notifications-helper";
 import { confirmTokenBalances } from "./helpers/tokens-helper";
 import { executeCusdService } from "./services/cusd-service";
@@ -69,7 +69,14 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
    * Future versions will also include an ethers provider aware of this.
    */
 
-  let cUsdPrice = await executeCusdService(coinGeckoApiKey, signer);
+  let cUsdPrice: number | undefined;
+
+  try {
+    cUsdPrice = await executeCusdService(coinGeckoApiKey, signer);
+  } catch (e) {
+    logError("cUSD Service", "Error executing kCur oracle service");
+    logError("cUSD Service", e);
+  }
 
   if (cUsdPrice == undefined) {
     cUsdPrice = 1; // good enough and doesn't fail the other service
@@ -82,12 +89,34 @@ export async function handler(event: IAutoRelayHandler, context?: IRunContext): 
     throw new Error("Cannot proceed, the remaining services depend on the kCur price, which could not be obtained");
   }
 
-  await executeKCurService(kCurPrice, signer);
+  try {
+    await executeKCurService(kCurPrice, signer);
+  } catch (e) {
+    logError("kCur Service", "Error executing kCur oracle service");
+    logError("kCur Service", e);
+  }
 
   //await Promise.all([
-  await executekGkCURService(kCurPrice, signer);
-  await executeMentoService(kCurPrice, relayerInfo.address, signer);
-  await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
+  try{
+    await executekGkCURService(kCurPrice, signer);
+  } catch (e) {
+    logError("kG-kCur Rate Service", "Error executing kGkCur Service");
+    logError("kG-kCur Rate Service", e);
+  }
+
+  try{
+    await executeMentoService(kCurPrice, relayerInfo.address, signer);
+  } catch (e) {
+    logError("Mento Service", "Error executing kGkCur Service");
+    logError("Mento Service", e);
+  }
+
+  try{
+    await executeFloorAndCeilingService(kCurPrice, relayerInfo.address, signer);
+  } catch (e) {
+    logError("FloorCeiling Service", "Error executing kGkCur Service");
+    logError("FloorCeiling Service", e);
+  }
   //]);
 
   if (failedStatus) {
