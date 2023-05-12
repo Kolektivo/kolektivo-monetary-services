@@ -345,14 +345,13 @@ export const executeFloorAndCeilingService = async (
     const ceiling = getCeiling(ceilingMultiplier, floor);
     logMessage(serviceName, `ceiling: ${ceiling}`);
 
-    const kCurPool = getContract("kCur Pool", signer);
-    const poolId: BytesLike = await kCurPool.getPoolId();
-
-    if (breachState[0]) {
+    if (breachState[0]) { // then there is a breach
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
       logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
       logMessage(serviceName, `Reserve value: ${fromWeiToNumber(reserveStatus[0], 18)}`);
       const vaultContract = getContract("Vault", signer);
+      const kCurPool = getContract("kCur Pool", signer);
+      const poolId: BytesLike = await kCurPool.getPoolId();
 
       if (breachState[1]) {
         /**
