@@ -239,30 +239,36 @@ const getCeiling = (ceilingMultiplier: number, floor: number): number => {
 
 /**
  * compute the number of kCUR needed to buy or sell.
- * get the needed $ to make up the difference
- *
- * @param priceLimit
- * @param kCurPrice
- * @param kCurTotalSupply
- * @param forFloor
- * @returns
+ * The idea here is to alter the total supply of kCUR enough to cause
+ * the floor or ceiling to equal the current price of xCUR
  */
 const computeDelta = (
-  priceLimit: number, // floor or ceiling
+  reserveValue: BigNumber,
   kCurPrice: number,
   kCurTotalSupply: BigNumber,
   forFloor: boolean,
 ): BigNumber => {
-  const delta = forFloor ? priceLimit - kCurPrice : kCurPrice - priceLimit;
+  const totalSupply = FixedNumber.fromValue(kCurTotalSupply, 0, "fixed32x18");
 
-  return BigNumber.from(
-    FixedNumber.fromString(delta.toString(), "fixed32x18")
-      .mulUnsafe(FixedNumber.fromValue(kCurTotalSupply, 0, "fixed32x18"))
-      .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // just to be safe
-      .round(0)
-      .toFormat("fixed32x0")
-      .toString(),
-  );
+  // kCurTotalSupply * (reserveValue / (kCurTotalSupply * kCurPrice))
+  let delta = FixedNumber.fromValue(reserveValue, 0, "fixed32x18")
+    // eslint-disable-next-line prettier/prettier
+    .divUnsafe(totalSupply.mulUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18")))
+    .mulUnsafe(totalSupply)
+    .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // just to be safe
+    .round(0);
+
+  /**
+   * get the delta
+   */
+  if (forFloor) {
+    // ceiling deltas will be negative
+    delta = delta.subUnsafe(totalSupply);
+  } else {
+    delta = totalSupply.subUnsafe(delta);
+  }
+
+  return BigNumber.from(delta.toFormat("fixed32x0").toString());
 };
 
 const computeValueOfDelta = (deltaBG: BigNumber, kCurPrice: number): BigNumber => {
@@ -325,6 +331,7 @@ export const executeFloorAndCeilingService = async (
     if (breachState[0]) {
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
       logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
+      logMessage(serviceName, `Reserve value: ${fromWeiToNumber(reserveStatus[0], 18)}`);
 
       if (breachState[1]) {
         /**
@@ -335,7 +342,7 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be burning (selling) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = computeDelta(floor, kCurPrice, totalSupply, true);
+        const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, true);
 
         const tx = await doit(
           false,
@@ -358,7 +365,7 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be minting (buying) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = computeDelta(ceiling, kCurPrice, totalSupply, false);
+        const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, false);
 
         const tx = await doit(
           true,
