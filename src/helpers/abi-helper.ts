@@ -2,6 +2,7 @@ import { logMessage } from "./errors-helper";
 
 export interface IContractInfo {
   address: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abi: Array<any>;
 }
 
