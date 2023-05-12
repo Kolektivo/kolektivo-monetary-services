@@ -1,9 +1,10 @@
+import calculateRequiredkCur from "../helpers/calculateRequiredKcurTokens";
 import { fromWei, fromWeiToNumber, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
-import { BigNumber, FixedNumber } from "ethers";
+import { BigNumber, FixedNumber, utils } from "ethers";
 import { BytesLike } from "ethers/lib/utils";
 
 const serviceName = "FloorCeiling Service";
@@ -328,6 +329,11 @@ export const executeFloorAndCeilingService = async (
     const ceiling = getCeiling(ceilingMultiplier, floor);
     logMessage(serviceName, `ceiling: ${ceiling}`);
 
+    const kCurPool = getContract("kCur Pool", signer);
+    const poolId: BytesLike = await kCurPool.getPoolId();
+
+    const vaultContractContract = getContract("Vault", signer);
+
     if (breachState[0]) {
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
       logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
@@ -339,15 +345,18 @@ export const executeFloorAndCeilingService = async (
          */
         logMessage(serviceName, `The floor has been breached`);
         /**
-         * delta is how many kCUR we should be burning (selling) to bring the treasury value on par with
+         * delta is how many kCUR we should be buying to bring the reserve value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, true);
+        const delta = await calculateRequiredkCur(
+          utils.parseEther(floor.toString()),
+          vaultContractContract,
+          cUsdContract.address,
+          poolId
+        );
 
-        /**
-         * don't invoke this for now, as the logic is not fully worked out
         const tx = await doit(
-          false,
+          true,
           delta,
           kCurPrice,
           kCurContract,
@@ -358,7 +367,7 @@ export const executeFloorAndCeilingService = async (
         );
 
         logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
-         */
+
       } else {
         /**
          * Is above the ceiling
@@ -373,7 +382,7 @@ export const executeFloorAndCeilingService = async (
         /**
          * don't invoke this for now, as the logic is not fully worked out
         const tx = await doit(
-          true,
+          false,
           delta,
           kCurPrice,
           kCurContract,
