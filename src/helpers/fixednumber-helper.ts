@@ -1,7 +1,7 @@
 import { BigNumber, FixedNumber } from "ethers";
 
-const ONE = FixedNumber.from(1, "fixed");
-const TWO = FixedNumber.from(2, "fixed");
+const ONE = FixedNumber.from(1);
+const TWO = FixedNumber.from(2);
 
 export const pow = (inputNumber: FixedNumber, exponentNumber: number): FixedNumber => {
   // Handle special cases
@@ -31,7 +31,7 @@ export const pow = (inputNumber: FixedNumber, exponentNumber: number): FixedNumb
 
 export const sqrt = (inputNumber: FixedNumber): FixedNumber => {
   // Adjust the scaling factor as needed
-  const scaledNumber = inputNumber.mulUnsafe(pow(FixedNumber.from("10", "fixed"), 4));
+  const scaledNumber = inputNumber.mulUnsafe(pow(FixedNumber.from("10"), 4));
 
   let guess = scaledNumber;
 
@@ -42,7 +42,7 @@ export const sqrt = (inputNumber: FixedNumber): FixedNumber => {
     guess = guess.addUnsafe(quotient).divUnsafe(TWO);
   }
 
-  return guess.divUnsafe(pow(FixedNumber.from("10", "fixed"), 2));
+  return guess.divUnsafe(pow(FixedNumber.from("10"), 2));
 };
 
 export const toBigNumber = (fn: FixedNumber): BigNumber => {

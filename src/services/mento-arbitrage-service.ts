@@ -45,8 +45,8 @@ export const executeMentoService = async (
     const kCurTotalSupply = await kCurContract.balanceOf(mentoReserveContract.address);
 
     const kCurTotalValue = fromWeiToNumber(
-      FixedNumber.fromValue(kCurTotalSupply, 0, "fixed")
-        .mulUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed"))
+      FixedNumber.fromValue(kCurTotalSupply)
+        .mulUnsafe(FixedNumber.fromString(kCurPrice.toString()))
         .round(0)
         .toFormat("fixed32x0")
         .toString(),
@@ -60,8 +60,8 @@ export const executeMentoService = async (
      * equivalence between kGUilder and Guilder
      */
     const kGTotalValue = fromWeiToNumber(
-      FixedNumber.fromValue(kGTotalSupply, 0, "fixed")
-        .mulUnsafe(FixedNumber.fromString(KGUILDER_USDPRICE.toString(), "fixed"))
+      FixedNumber.fromValue(kGTotalSupply)
+        .mulUnsafe(FixedNumber.fromString(KGUILDER_USDPRICE.toString()))
         .round(0)
         .toFormat("fixed32x0")
         .toString(),

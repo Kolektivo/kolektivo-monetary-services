@@ -259,20 +259,20 @@ const computeDelta = async (
   const cUsdBalance = balances[cUsdIndex];
   const kCurBalance = balances[kCurIndex];
 
-  const one = FixedNumber.fromString("1", "fixed");
+  const one = FixedNumber.fromString("1");
   // spot price before swap
-  const sp1 = FixedNumber.fromValue(cUsdBalance, 0, "fixed")
-    .divUnsafe(FixedNumber.fromValue(kCurBalance, 0, "fixed"))
-    .mulUnsafe(one.divUnsafe(one.subUnsafe(FixedNumber.fromString("0.001", "fixed"))));
+  const sp1 = FixedNumber.fromValue(cUsdBalance)
+    .divUnsafe(FixedNumber.fromValue(kCurBalance))
+    .mulUnsafe(one.divUnsafe(one.subUnsafe(FixedNumber.fromString("0.001"))));
   // console.log(`sp1: ${sp1.toString()}`);
   // target spot price
-  const sp2 = FixedNumber.fromString(floor.toString(), "fixed");
+  const sp2 = FixedNumber.fromString(floor.toString());
   // kCur balance of kCur<>cUSD pool
   // console.log(`sp2: ${sp2.toString()}`);
-  const bk1 = FixedNumber.fromValue(kCurBalance, 0, "fixed");
+  const bk1 = FixedNumber.fromValue(kCurBalance);
   // cUSD balance of kCur<>cUSD pool
   // console.log(`bk1: ${bk1.toString()}`);
-  const bc1 = FixedNumber.fromValue(cUsdBalance, 0, "fixed");
+  const bc1 = FixedNumber.fromValue(cUsdBalance);
   // spot price before swap divided by spot price after swap
   // required by the formula
   /// console.log(`bc1: ${bc1.toString()}`);
@@ -289,25 +289,21 @@ const computeDelta = async (
   // console.log(`amountOut: ${amountOut.toString()})`);
 
   // swapping on 15% of required amount to ensure the price doesn't shoot too high
-  const amountOutAdjusted = amountOut.divUnsafe(FixedNumber.fromString("1.5", "fixed"));
+  const amountOutAdjusted = amountOut.divUnsafe(FixedNumber.fromString("1.5"));
 
   return toBigNumber(amountOutAdjusted);
-  ///console.log(`cUsdBalance: ${fromWei(cUsdBalance, 18)}`);
-  ///console.log(`kCurBalance: ${fromWei(kCurBalance, 18)}`);
-  ///console.log(`delta: ${fromWei(result, 18)}`);
+  //console.log(`cUsdBalance: ${fromWei(cUsdBalance, 18)}`);
+  //console.log(`kCurBalance: ${fromWei(kCurBalance, 18)}`);
+  //console.log(`delta: ${fromWei(result, 18)}`);
 };
 
 const computeValueOfDelta = (deltaBG: BigNumber, kCurPrice: number): BigNumber => {
-  const delta = FixedNumber.fromValue(deltaBG, 0, "fixed");
-  return toBigNumber(FixedNumber.fromString(kCurPrice.toString(), "fixed").mulUnsafe(delta));
+  const delta = FixedNumber.fromValue(deltaBG);
+  return toBigNumber(FixedNumber.fromString(kCurPrice.toString()).mulUnsafe(delta));
 };
 
 const getkCurTotalSupply = (totalSupplyValue: BigNumber, kCurPrice: number): BigNumber => {
-  return toBigNumber(
-    FixedNumber.fromValue(totalSupplyValue, 0, "fixed").divUnsafe(
-      FixedNumber.fromString(kCurPrice.toString(), "fixed"),
-    ),
-  );
+  return toBigNumber(FixedNumber.fromValue(totalSupplyValue).divUnsafe(FixedNumber.fromString(kCurPrice.toString())));
 };
 
 /**
