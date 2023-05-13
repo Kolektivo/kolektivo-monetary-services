@@ -1,6 +1,6 @@
 import { fromWei, fromWeiToNumber, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
-import { sqrt } from "../helpers/fixednumber-helper";
+import { sqrt, toBigNumber } from "../helpers/fixednumber-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
@@ -259,53 +259,54 @@ const computeDelta = async (
   const cUsdBalance = balances[cUsdIndex];
   const kCurBalance = balances[kCurIndex];
 
-  // BigN.config({ EXPONENTIAL_AT: 10000, DECIMAL_PLACES: 10 });
-
-  const one = FixedNumber.fromString("1", "fixed32x18");
+  const one = FixedNumber.fromString("1", "fixed");
   // spot price before swap
-  const sp1 = FixedNumber.fromValue(cUsdBalance, 0, "fixed32x18")
-    .divUnsafe(FixedNumber.fromValue(kCurBalance, 0, "fixed32x18"))
-    .mulUnsafe(one.divUnsafe(one.subUnsafe(FixedNumber.fromString("0.001", "fixed32x18"))));
+  const sp1 = FixedNumber.fromValue(cUsdBalance, 0, "fixed")
+    .divUnsafe(FixedNumber.fromValue(kCurBalance, 0, "fixed"))
+    .mulUnsafe(one.divUnsafe(one.subUnsafe(FixedNumber.fromString("0.001", "fixed"))));
+  // console.log(`sp1: ${sp1.toString()}`);
   // target spot price
-  const sp2 = FixedNumber.fromString(floor.toString(), "fixed32x18");
+  const sp2 = FixedNumber.fromString(floor.toString(), "fixed");
   // kCur balance of kCur<>cUSD pool
-  const bk1 = FixedNumber.fromValue(kCurBalance, 0, "fixed32x18");
+  // console.log(`sp2: ${sp2.toString()}`);
+  const bk1 = FixedNumber.fromValue(kCurBalance, 0, "fixed");
   // cUSD balance of kCur<>cUSD pool
-  const bc1 = FixedNumber.fromValue(cUsdBalance, 0, "fixed32x18");
+  // console.log(`bk1: ${bk1.toString()}`);
+  const bc1 = FixedNumber.fromValue(cUsdBalance, 0, "fixed");
   // spot price before swap divided by spot price after swap
   // required by the formula
+  /// console.log(`bc1: ${bc1.toString()}`);
   const sp2BySp1 = sp2.divUnsafe(sp1);
+  // console.log(`sp2BySp1: ${sp2BySp1.toString()}`);
+  // console.log(`sqrt(sp2BySp1): ${sqrt(sp2BySp1).toString()}`);
 
   // calculated based on formula provided here https://balancer-dao.gitbook.io/learn-about-balancer/fundamentals/white-paper/trading-formulas/in-given-price
   const amountIn = bk1.mulUnsafe(sqrt(sp2BySp1).subUnsafe(one));
+  // console.log(`amountIn: ${amountIn.toString()}`);
 
   // calculated based on formula provided here https://docs.balancer.fi/reference/math/weighted-math.html#outgivenin
   const amountOut = bk1.mulUnsafe(one.subUnsafe(bc1.divUnsafe(bc1.addUnsafe(amountIn))));
+  // console.log(`amountOut: ${amountOut.toString()})`);
 
   // swapping on 15% of required amount to ensure the price doesn't shoot too high
-  const amountOutAdjusted = amountOut.divUnsafe(FixedNumber.fromString("1.5", "fixed32x18"));
+  const amountOutAdjusted = amountOut.divUnsafe(FixedNumber.fromString("1.5", "fixed"));
 
-  return BigNumber.from(amountOutAdjusted.round(0).toFormat("fixed32x0").toString());
+  return toBigNumber(amountOutAdjusted);
+  ///console.log(`cUsdBalance: ${fromWei(cUsdBalance, 18)}`);
+  ///console.log(`kCurBalance: ${fromWei(kCurBalance, 18)}`);
+  ///console.log(`delta: ${fromWei(result, 18)}`);
 };
 
 const computeValueOfDelta = (deltaBG: BigNumber, kCurPrice: number): BigNumber => {
-  const delta = FixedNumber.fromValue(deltaBG, 0, "fixed32x18");
-  return BigNumber.from(
-    FixedNumber.fromString(kCurPrice.toString(), "fixed32x18")
-      .mulUnsafe(delta)
-      .round(0)
-      .toFormat("fixed32x0")
-      .toString(),
-  );
+  const delta = FixedNumber.fromValue(deltaBG, 0, "fixed");
+  return toBigNumber(FixedNumber.fromString(kCurPrice.toString(), "fixed").mulUnsafe(delta));
 };
 
 const getkCurTotalSupply = (totalSupplyValue: BigNumber, kCurPrice: number): BigNumber => {
-  return BigNumber.from(
-    FixedNumber.fromValue(totalSupplyValue, 0, "fixed32x18")
-      .divUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18"))
-      .round(0)
-      .toFormat("fixed32x0")
-      .toString(),
+  return toBigNumber(
+    FixedNumber.fromValue(totalSupplyValue, 0, "fixed").divUnsafe(
+      FixedNumber.fromString(kCurPrice.toString(), "fixed"),
+    ),
   );
 };
 
@@ -350,6 +351,7 @@ export const executeFloorAndCeilingService = async (
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
       logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
       logMessage(serviceName, `Reserve value: ${fromWeiToNumber(reserveStatus[0], 18)}`);
+
       const vaultContract = getContract("Vault", signer);
       const kCurPool = getContract("kCur Pool", signer);
       const poolId: BytesLike = await kCurPool.getPoolId();

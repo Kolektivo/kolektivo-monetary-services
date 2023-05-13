@@ -1,14 +1,50 @@
-import { FixedNumber } from "ethers";
+import { BigNumber, FixedNumber } from "ethers";
 
-const ONE = FixedNumber.from(1, "fixed32x18");
-const TWO = FixedNumber.from(2, "fixed32x18");
+const ONE = FixedNumber.from(1, "fixed");
+const TWO = FixedNumber.from(2, "fixed");
 
-export const sqrt = (x: FixedNumber): FixedNumber => {
-  let z = x.addUnsafe(ONE).divUnsafe(TWO);
-  let y = x;
-  while (z.subUnsafe(y).isNegative()) {
-    y = z;
-    z = x.divUnsafe(z).addUnsafe(z).divUnsafe(TWO);
+export const pow = (inputNumber: FixedNumber, exponentNumber: number): FixedNumber => {
+  // Handle special cases
+  if (exponentNumber === 0) {
+    return ONE;
+  } else if (exponentNumber === 1) {
+    return inputNumber;
   }
-  return y.round(18);
+
+  let result = ONE;
+
+  // Compute the power using repeated multiplication
+  if (exponentNumber > 0) {
+    for (let i = 0; i < exponentNumber; i++) {
+      result = result.mulUnsafe(inputNumber);
+    }
+  } else {
+    // Negative exponent, compute reciprocal
+    const reciprocalBase = ONE.divUnsafe(inputNumber);
+    for (let i = 0; i > exponentNumber; i--) {
+      result = result.mulUnsafe(reciprocalBase);
+    }
+  }
+
+  return result;
+};
+
+export const sqrt = (inputNumber: FixedNumber): FixedNumber => {
+  // Adjust the scaling factor as needed
+  const scaledNumber = inputNumber.mulUnsafe(pow(FixedNumber.from("10", "fixed"), 4));
+
+  let guess = scaledNumber;
+
+  const maxIterations = 100; // Adjust the number of iterations based on desired precision
+
+  for (let i = 0; i < maxIterations; i++) {
+    const quotient = scaledNumber.divUnsafe(guess);
+    guess = guess.addUnsafe(quotient).divUnsafe(TWO);
+  }
+
+  return guess.divUnsafe(pow(FixedNumber.from("10", "fixed"), 2));
+};
+
+export const toBigNumber = (fn: FixedNumber): BigNumber => {
+  return BigNumber.from(fn.round(0).toFormat("fixed32x0").toString());
 };
