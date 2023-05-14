@@ -1,7 +1,9 @@
 import { BigNumber, FixedNumber } from "ethers";
 
+const ZERO = FixedNumber.from(0);
 const ONE = FixedNumber.from(1);
 const TWO = FixedNumber.from(2);
+const NEGATIVE_ONE = FixedNumber.from(-1);
 
 export const pow = (inputNumber: FixedNumber, exponentNumber: number): FixedNumber => {
   // Handle special cases
@@ -29,7 +31,37 @@ export const pow = (inputNumber: FixedNumber, exponentNumber: number): FixedNumb
   return result;
 };
 
+const reverseSign = (num: FixedNumber): FixedNumber => {
+  return num.mulUnsafe(NEGATIVE_ONE);
+};
+
+const abs = (num: FixedNumber): FixedNumber => {
+  return num.isNegative() ? reverseSign(num) : num;
+};
+
+const gt = (num1: FixedNumber, num2: FixedNumber): boolean => {
+  /**
+   * is num1 greater than num2
+   */
+  return num2.subUnsafe(num1).isNegative();
+};
+
+const lt = (num1: FixedNumber, num2: FixedNumber): boolean => {
+  /**
+   * is num1 less than num2
+   */
+  return num1.subUnsafe(num2).isNegative();
+};
+
 export const sqrt = (inputNumber: FixedNumber): FixedNumber => {
+  if (inputNumber.isZero()) {
+    return ZERO;
+  }
+
+  if (inputNumber.isNegative()) {
+    throw new Error("attempting to compute square root of a negative number");
+  }
+
   // Adjust the scaling factor as needed
   const scaledNumber = inputNumber.mulUnsafe(pow(FixedNumber.from("10"), 4));
 
