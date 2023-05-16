@@ -112,6 +112,24 @@ interface IEnvInfo {
   API_SECRET_TEAM: string;
 }
 
+// const test = async () => {
+//   console.log(`sqrt(1.5): ${sqrt(FixedNumber.fromString("1.5")).toString()}`);
+//   console.log(`sqrt(0.8): ${sqrt(FixedNumber.fromString("0.8")).toString()}`);
+//   console.log(`sqrt(144): ${sqrt(FixedNumber.fromString("144")).toString()}`);
+//   console.log(`sqrt(0.0000028): ${sqrt(FixedNumber.fromString("0.0000028")).toString()}`);
+//   try {
+//     console.log(`sqrt(-0.25): ${sqrt(FixedNumber.fromString("-0.25")).toString()}`);
+//   } catch {
+//     console.log(`sqrt(-0.25): properly caught the negative number error`);
+//   }
+
+//   await new Promise((resolve) => setTimeout(resolve, 1000));
+
+//   process.exit(1);
+// };
+
+// void test();
+
 if (environment.runningLocally) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   require("dotenv").config({ path: process.env.DOTENV_CONFIG_PATH });

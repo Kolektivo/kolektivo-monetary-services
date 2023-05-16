@@ -1,5 +1,6 @@
 import { fromWei, fromWeiToNumber, getContract, ITransaction, toWei } from "../helpers/contracts-helper";
 import { logMessage, serviceThrewException } from "../helpers/errors-helper";
+import { sqrt, toBigNumber } from "../helpers/fixednumber-helper";
 import { createAllowance, IErc20Token } from "../helpers/tokens-helper";
 
 import { DefenderRelaySigner } from "defender-relay-client/lib/ethers/signer";
@@ -143,12 +144,10 @@ const doit = async (
   relayerAddress: string,
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proxyPoolContract: any,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vault: any,
   signer: DefenderRelaySigner,
 ): Promise<ITransaction> => {
-  /**
-   * tell kCUR token to allow the Vault to spend kCUR on behalf of the Relayer
-   */
-  const vault = getContract("Vault", signer);
   /**
    * tell token to allow the proxy contract to spend token on behalf of the Relayer
    * Since we can't know the amount of cUSD in advance (kCUr is always the fixed amount in the exchange),
@@ -169,6 +168,9 @@ const doit = async (
       serviceName,
     ),
 
+    /**
+     * tell kCUR token to allow the Vault to spend kCUR on behalf of the Relayer
+     */
     // eslint-disable-next-line prettier/prettier
     createAllowance(signer,
       isBuying ? cUsdContract : kCurContract,
@@ -242,54 +244,66 @@ const getCeiling = (ceilingMultiplier: number, floor: number): number => {
  * The idea here is to alter the total supply of kCUR enough to cause
  * the floor or ceiling to equal the current price of xCUR
  */
-const computeDelta = (
-  reserveValue: BigNumber,
-  kCurPrice: number,
-  kCurTotalSupply: BigNumber,
-  forFloor: boolean,
-): BigNumber => {
-  const totalSupply = FixedNumber.fromValue(kCurTotalSupply, 0, "fixed32x18");
+const computeDelta = async (
+  floor: number,
+  cUsdAddress: string,
+  poolId: BytesLike,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  vaultContract: any,
+): Promise<BigNumber> => {
+  const { tokens, balances } = await vaultContract.getPoolTokens(poolId);
 
-  // kCurTotalSupply * (reserveValue / (kCurTotalSupply * kCurPrice))
-  let delta = FixedNumber.fromValue(reserveValue, 0, "fixed32x18")
-    // eslint-disable-next-line prettier/prettier
-    .divUnsafe(totalSupply.mulUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18")))
-    .mulUnsafe(totalSupply)
-    .addUnsafe(FixedNumber.fromString("1", "fixed32x18")) // just to be safe
-    .round(0);
+  const cUsdIndex = tokens.indexOf(cUsdAddress);
+  const kCurIndex = cUsdIndex === 0 ? 1 : 0;
 
-  /**
-   * get the delta
-   */
-  if (forFloor) {
-    // ceiling deltas will be negative
-    delta = delta.subUnsafe(totalSupply);
-  } else {
-    delta = totalSupply.subUnsafe(delta);
-  }
+  const cUsdBalance = balances[cUsdIndex];
+  const kCurBalance = balances[kCurIndex];
 
-  return BigNumber.from(delta.toFormat("fixed32x0").toString());
+  const one = FixedNumber.fromString("1");
+  // spot price before swap
+  const sp1 = FixedNumber.fromValue(cUsdBalance)
+    .divUnsafe(FixedNumber.fromValue(kCurBalance))
+    .mulUnsafe(one.divUnsafe(one.subUnsafe(FixedNumber.fromString("0.001"))));
+  // console.log(`sp1: ${sp1.toString()}`);
+  // target spot price
+  const sp2 = FixedNumber.fromString(floor.toString());
+  // kCur balance of kCur<>cUSD pool
+  // console.log(`sp2: ${sp2.toString()}`);
+  const bk1 = FixedNumber.fromValue(kCurBalance);
+  // cUSD balance of kCur<>cUSD pool
+  // console.log(`bk1: ${bk1.toString()}`);
+  const bc1 = FixedNumber.fromValue(cUsdBalance);
+  // spot price before swap divided by spot price after swap
+  // required by the formula
+  /// console.log(`bc1: ${bc1.toString()}`);
+  const sp2BySp1 = sp2.divUnsafe(sp1);
+  // console.log(`sp2BySp1: ${sp2BySp1.toString()}`);
+  // console.log(`sqrt(sp2BySp1): ${sqrt(sp2BySp1).toString()}`);
+
+  // calculated based on formula provided here https://balancer-dao.gitbook.io/learn-about-balancer/fundamentals/white-paper/trading-formulas/in-given-price
+  const amountIn = bk1.mulUnsafe(sqrt(sp2BySp1).subUnsafe(one));
+  // console.log(`amountIn: ${amountIn.toString()}`);
+
+  // calculated based on formula provided here https://docs.balancer.fi/reference/math/weighted-math.html#outgivenin
+  const amountOut = bk1.mulUnsafe(one.subUnsafe(bc1.divUnsafe(bc1.addUnsafe(amountIn))));
+  // console.log(`amountOut: ${amountOut.toString()})`);
+
+  // swapping on 15% of required amount to ensure the price doesn't shoot too high
+  const amountOutAdjusted = amountOut.divUnsafe(FixedNumber.fromString("1.5"));
+
+  return toBigNumber(amountOutAdjusted);
+  //console.log(`cUsdBalance: ${fromWei(cUsdBalance, 18)}`);
+  //console.log(`kCurBalance: ${fromWei(kCurBalance, 18)}`);
+  //console.log(`delta: ${fromWei(result, 18)}`);
 };
 
 const computeValueOfDelta = (deltaBG: BigNumber, kCurPrice: number): BigNumber => {
-  const delta = FixedNumber.fromValue(deltaBG, 0, "fixed32x18");
-  return BigNumber.from(
-    FixedNumber.fromString(kCurPrice.toString(), "fixed32x18")
-      .mulUnsafe(delta)
-      .round(0)
-      .toFormat("fixed32x0")
-      .toString(),
-  );
+  const delta = FixedNumber.fromValue(deltaBG);
+  return toBigNumber(FixedNumber.fromString(kCurPrice.toString()).mulUnsafe(delta));
 };
 
 const getkCurTotalSupply = (totalSupplyValue: BigNumber, kCurPrice: number): BigNumber => {
-  return BigNumber.from(
-    FixedNumber.fromValue(totalSupplyValue, 0, "fixed32x18")
-      .divUnsafe(FixedNumber.fromString(kCurPrice.toString(), "fixed32x18"))
-      .round(0)
-      .toFormat("fixed32x0")
-      .toString(),
-  );
+  return toBigNumber(FixedNumber.fromValue(totalSupplyValue).divUnsafe(FixedNumber.fromString(kCurPrice.toString())));
 };
 
 /**
@@ -329,9 +343,14 @@ export const executeFloorAndCeilingService = async (
     logMessage(serviceName, `ceiling: ${ceiling}`);
 
     if (breachState[0]) {
+      // then there is a breach
       const totalSupply = getkCurTotalSupply(reserveStatus[1], kCurPrice);
       logMessage(serviceName, `kCUR total supply: ${fromWeiToNumber(totalSupply, 18)}`);
       logMessage(serviceName, `Reserve value: ${fromWeiToNumber(reserveStatus[0], 18)}`);
+
+      const vaultContract = getContract("Vault", signer);
+      const kCurPool = getContract("kCur Pool", signer);
+      const poolId: BytesLike = await kCurPool.getPoolId();
 
       if (breachState[1]) {
         /**
@@ -339,26 +358,24 @@ export const executeFloorAndCeilingService = async (
          */
         logMessage(serviceName, `The floor has been breached`);
         /**
-         * delta is how many kCUR we should be burning (selling) to bring the treasury value on par with
+         * delta is how many kCUR we should be buying to bring the reserve value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, true);
+        const delta = await computeDelta(floor, cUsdContract.address, poolId, vaultContract);
 
-        /**
-         * don't invoke this for now, as the logic is not fully worked out
         const tx = await doit(
-          false,
+          true,
           delta,
           kCurPrice,
           kCurContract,
           cUsdContract,
           relayerAddress,
           proxyPoolContract,
+          vaultContract,
           signer,
         );
 
         logMessage(serviceName, `Sold ${fromWei(delta, 18)} kCUR for cUSD, tx hash: ${tx.hash}`);
-         */
       } else {
         /**
          * Is above the ceiling
@@ -368,12 +385,12 @@ export const executeFloorAndCeilingService = async (
          * delta is how many kCUR we should be minting (buying) to bring the treasury value on par with
          * the value of the total supply of kCUR.
          */
-        const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, false);
-
         /**
          * don't invoke this for now, as the logic is not fully worked out
+        const delta = computeDelta(reserveStatus[0], kCurPrice, totalSupply, false);
+
         const tx = await doit(
-          true,
+          false,
           delta,
           kCurPrice,
           kCurContract,
